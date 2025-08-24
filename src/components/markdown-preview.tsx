@@ -363,62 +363,97 @@ export function MarkdownPreview({
   useEffect(() => {
     if (!actualRef.current) return;
 
-    const mermaidContainers = actualRef.current.querySelectorAll<HTMLElement>(
-      '.mermaid-container'
-    );
+    const renderMermaidDiagrams = () => {
+      const mermaidContainers = actualRef.current?.querySelectorAll<HTMLElement>('.mermaid-container') || [];
+      
+      if (mermaidContainers.length > 0) {
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: theme === 'dark' ? 'dark' : 'default',
+          securityLevel: 'loose',
+        });
 
-    if (mermaidContainers.length > 0) {
-      mermaid.initialize({
-        startOnLoad: false,
-        theme: theme === 'dark' ? 'dark' : 'default',
-        securityLevel: 'loose',
-      });
-
-      mermaidContainers.forEach((container) => {
-        const mermaidCode = container.getAttribute('data-mermaid');
-        if (mermaidCode) {
-          try {
-            // Add loading class
-            container.classList.add('mermaid-loading');
-            
-            mermaid
-              .render(
-                `mermaid-${Math.random().toString(36).substr(2, 9)}`,
-                mermaidCode
-              )
-              .then(({ svg }) => {
-                const svgContainer = document.createElement('div');
-                svgContainer.innerHTML = svg;
-
-                // Ensure SVG is properly styled for zoom and responsive
-                const svgElement = svgContainer.querySelector("svg");
-                if (svgElement) {
-                  svgElement.style.overflow = "visible";
-                  svgElement.style.maxWidth = "100%";
-                  svgElement.style.height = "auto";
-                  svgElement.style.display = "block";
-                  svgElement.style.margin = "0 auto";
-                }
-
+        mermaidContainers.forEach((container) => {
+          const mermaidCode = container.getAttribute('data-mermaid');
+          if (mermaidCode) {
+            try {
+              // Skip if already rendered with the same code and theme
+              const currentTheme = theme === 'dark' ? 'dark' : 'default';
+              const lastTheme = container.getAttribute('data-theme');
+              const lastCode = container.getAttribute('data-last-code');
+              
+              if (lastTheme === currentTheme && lastCode === mermaidCode) {
+                return;
+              }
+              
+              container.classList.add('mermaid-loading');
+              container.setAttribute('data-theme', currentTheme);
+              container.setAttribute('data-last-code', mermaidCode);
+              
+              const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
+              
+              mermaid.render(id, mermaidCode).then(({ svg }) => {
+                // Create a temporary container to hold the new SVG
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = svg;
+                
+                // Get the SVG element
+                const svgElement = tempDiv.querySelector('svg');
+                if (!svgElement) return;
+                
+                // Preserve original classes and add our own
+                svgElement.className.baseVal = `mermaid-svg ${svgElement.className.baseVal}`;
+                
+                // Set SVG styles
+                svgElement.style.overflow = 'visible';
+                svgElement.style.maxWidth = '100%';
+                svgElement.style.height = 'auto';
+                svgElement.style.display = 'block';
+                svgElement.style.margin = '0 auto';
+                
+                // Replace the container's content with the new SVG
                 container.innerHTML = '';
-                container.appendChild(svgContainer.firstChild as Node);
+                container.appendChild(svgElement);
+                
                 container.classList.remove('mermaid-loading');
                 container.classList.add('mermaid-loaded');
-              })
-              .catch(error => {
+                
+              }).catch(error => {
                 console.error('Error rendering mermaid diagram:', error);
                 container.classList.remove('mermaid-loading');
                 container.classList.add('mermaid-error');
               });
-          } catch (error) {
-            console.error('Error rendering mermaid diagram:', error);
-            container.classList.remove('mermaid-loading');
-            container.classList.add('mermaid-error');
+              
+            } catch (error) {
+              console.error('Error in mermaid rendering:', error);
+              container.classList.remove('mermaid-loading');
+              container.classList.add('mermaid-error');
+            }
           }
-        }
+        });
+      }
+    };
+    
+    // Initial render
+    renderMermaidDiagrams();
+    
+    // Re-render on theme changes
+    const themeObserver = new MutationObserver(() => {
+      renderMermaidDiagrams();
+    });
+    
+    // Observe theme changes on the document element
+    if (document.documentElement) {
+      themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class', 'data-theme']
       });
     }
-  }, [theme, actualRef, processedContent.codeBlocks, zoomLevel]);
+    
+    return () => {
+      themeObserver.disconnect();
+    };
+  }, [theme, processedContent.codeBlocks]); // Removed zoomLevel from dependencies
 
   const handleZoomIn = () => {
     setZoomLevel((prev) => Math.min(prev + 25, 200));
@@ -504,19 +539,18 @@ export function MarkdownPreview({
           className="h-full w-full custom-scrollbar"
           style={{
             overflow: 'auto',
-            transform: `scale(${zoomLevel / 100})`,
-            transformOrigin: 'top left',
             width: '100%',
             height: '100%',
-            minHeight: '100%',
           }}
         >
           <div 
             className="markdown-content p-4"
             style={{
-              width: 'fit-content',
-              minWidth: '100%',
+              transform: `scale(${zoomLevel / 100})`,
               transformOrigin: 'top left',
+              width: `${100 / (zoomLevel / 100)}%`,
+              minHeight: '100%',
+              paddingBottom: '2rem',
             }}
           >
             <div
@@ -524,7 +558,6 @@ export function MarkdownPreview({
               className="prose prose-sm max-w-none dark:prose-invert"
               style={{
                 width: '100%',
-                height: '100%',
                 overflow: 'visible',
               } as React.CSSProperties}
               dangerouslySetInnerHTML={{ __html: processedContent.html }}
