@@ -658,9 +658,9 @@ export function MarkdownApp() {
           ExportUtils.exportToMarkdown(content, `${title}.md`);
           break;
         case "html":
-          await ExportUtils.exportToHTML(content, { 
-            title, 
-            theme: theme === "dark" ? "dark" : "light" 
+          await ExportUtils.exportToHTML(content, {
+            title,
+            theme: theme === "dark" ? "dark" : "light",
           });
           break;
         case "pdf":
@@ -671,7 +671,11 @@ export function MarkdownApp() {
           );
           break;
         case "docx":
-          await ExportUtils.exportToDOCX(content, title, theme === "dark" ? "dark" : "light");
+          await ExportUtils.exportToDOCX(
+            content,
+            title,
+            theme === "dark" ? "dark" : "light"
+          );
           break;
       }
     } catch (error) {
