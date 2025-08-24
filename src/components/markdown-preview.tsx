@@ -226,111 +226,112 @@ export function MarkdownPreview({
   // Render Mermaid diagrams after content is updated
   useEffect(() => {
     if (actualRef.current && processedContent.codeBlocks.length > 0) {
-      // Add a small delay to ensure theme change is applied
       const renderDiagrams = async () => {
-        // Clear any existing mermaid diagrams first
-        const existingMermaidElements =
-          actualRef.current?.querySelectorAll(".mermaid");
-        existingMermaidElements?.forEach((el) => el.remove());
+        // Only clear mermaid diagrams if content has actually changed
+        const mermaidBlocks = processedContent.codeBlocks.filter(block => block.isMermaid);
+        
+        for (const block of mermaidBlocks) {
+          const placeholder = actualRef.current?.querySelector(
+            `[data-block-id="${block.id}"]`
+          );
+          
+          // Skip if already rendered and content hasn't changed
+          if (placeholder && placeholder.querySelector('.mermaid-container')) {
+            continue;
+          }
+          
+          if (placeholder) {
+            try {
+              // Clear the placeholder first
+              placeholder.innerHTML = "";
 
-        for (const block of processedContent.codeBlocks) {
-          if (block.isMermaid) {
-            const placeholder = actualRef.current?.querySelector(
-              `[data-block-id="${block.id}"]`
-            );
-            if (placeholder) {
-              try {
-                // Clear the placeholder first
-                placeholder.innerHTML = "";
+              // Create a unique ID for this diagram
+              const diagramId = `mermaid-${block.id}-${Date.now()}`;
 
-                // Create a unique ID for this diagram
-                const diagramId = `mermaid-${block.id}-${Date.now()}`;
+              // Preprocess the mermaid code to handle HTML tags better
+              let processedCode = block.code;
 
-                // Preprocess the mermaid code to handle HTML tags better
-                let processedCode = block.code;
+              // Ensure proper line endings
+              processedCode = processedCode
+                .replace(/\r\n/g, "\n")
+                .replace(/\r/g, "\n");
 
-                // Ensure proper line endings
-                processedCode = processedCode
-                  .replace(/\r\n/g, "\n")
-                  .replace(/\r/g, "\n");
+              // Remove any potential HTML artifacts that might have been introduced
+              processedCode = processedCode
+                .replace(/<div[^>]*>/g, "")
+                .replace(/<\/div>/g, "");
+              processedCode = processedCode
+                .replace(/<span[^>]*>/g, "")
+                .replace(/<\/span>/g, "");
 
-                // Remove any potential HTML artifacts that might have been introduced
-                processedCode = processedCode
-                  .replace(/<div[^>]*>/g, "")
-                  .replace(/<\/div>/g, "");
-                processedCode = processedCode
-                  .replace(/<span[^>]*>/g, "")
-                  .replace(/<\/span>/g, "");
+              console.log("Rendering mermaid diagram:", diagramId);
+              console.log("Original mermaid code:", block.code);
+              console.log("Processed mermaid code:", processedCode);
 
-                console.log("Rendering mermaid diagram:", diagramId);
-                console.log("Original mermaid code:", block.code);
-                console.log("Processed mermaid code:", processedCode);
+              const { svg } = await mermaid.render(diagramId, processedCode);
 
-                const { svg } = await mermaid.render(diagramId, processedCode);
+              // Create container for diagram and download button
+              const container = document.createElement("div");
+              container.className = "relative group mermaid-container";
 
-                // Create container for diagram and download button
-                const container = document.createElement("div");
-                container.className = "relative group";
+              // Add the SVG
+              const svgContainer = document.createElement("div");
+              svgContainer.innerHTML = svg;
+              container.appendChild(svgContainer);
 
-                // Add the SVG
-                const svgContainer = document.createElement("div");
-                svgContainer.innerHTML = svg;
-                container.appendChild(svgContainer);
+              // Add download button overlay
+              const downloadButton = document.createElement("button");
+              downloadButton.className =
+                "absolute top-2 right-2 bg-background/80 backdrop-blur-sm border border-border rounded-md p-2 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background/90";
+              downloadButton.innerHTML = `
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+              `;
+              downloadButton.title = "Download diagram";
 
-                // Add download button overlay
-                const downloadButton = document.createElement("button");
-                downloadButton.className =
-                  "absolute top-2 right-2 bg-background/80 backdrop-blur-sm border border-border rounded-md p-2 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background/90";
-                downloadButton.innerHTML = `
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                  </svg>
-                `;
-                downloadButton.title = "Download diagram";
-
-                // Add click handler for download
-                downloadButton.addEventListener("click", (e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setDownloadModalState({
-                    isOpen: true,
-                    mermaidCode: block.code,
-                    diagramTitle: `Diagram ${block.id}`,
-                  });
+              // Add click handler for download
+              downloadButton.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setDownloadModalState({
+                  isOpen: true,
+                  mermaidCode: block.code,
+                  diagramTitle: `Diagram ${block.id}`,
                 });
+              });
 
-                container.appendChild(downloadButton);
-                placeholder.appendChild(container);
-              } catch (error) {
-                console.error("Error rendering mermaid diagram:", error);
-                placeholder.innerHTML = `
-                  <div class="text-red-500 p-3 border border-red-300 rounded bg-red-50 dark:bg-red-900/20 mb-4">
-                    <div class="flex items-start gap-2">
-                      <svg class="w-5 h-5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                      </svg>
-                      <div class="flex-1">
-                        <strong class="block mb-1">Mermaid Diagram Error</strong>
-                        <p class="text-sm mb-2">Could not render diagram. Please check the syntax.</p>
-                        <details class="text-xs">
-                          <summary class="cursor-pointer hover:text-red-700 dark:hover:text-red-300">Show diagram code</summary>
-                          <pre class="mt-2 bg-gray-100 dark:bg-gray-800 p-2 rounded overflow-auto text-xs">${
-                            block.code
-                          }</pre>
-                        </details>
-                        <details class="text-xs mt-2">
-                          <summary class="cursor-pointer hover:text-red-700 dark:hover:text-red-300">Show full error</summary>
-                          <pre class="mt-2 bg-gray-100 dark:bg-gray-800 p-2 rounded overflow-auto text-xs">${
-                            error instanceof Error
-                              ? error.message
-                              : "Unknown error"
-                          }</pre>
-                        </details>
-                      </div>
+              container.appendChild(downloadButton);
+              placeholder.appendChild(container);
+            } catch (error) {
+              console.error("Error rendering mermaid diagram:", error);
+              placeholder.innerHTML = `
+                <div class="text-red-500 p-3 border border-red-300 rounded bg-red-50 dark:bg-red-900/20 mb-4">
+                  <div class="flex items-start gap-2">
+                    <svg class="w-5 h-5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                    </svg>
+                    <div class="flex-1">
+                      <strong class="block mb-1">Mermaid Diagram Error</strong>
+                      <p class="text-sm mb-2">Could not render diagram. Please check the syntax.</p>
+                      <details class="text-xs">
+                        <summary class="cursor-pointer hover:text-red-700 dark:hover:text-red-300">Show diagram code</summary>
+                        <pre class="mt-2 bg-gray-100 dark:bg-gray-800 p-2 rounded overflow-auto text-xs">${
+                          block.code
+                        }</pre>
+                      </details>
+                      <details class="text-xs mt-2">
+                        <summary class="cursor-pointer hover:text-red-700 dark:hover:text-red-300">Show full error</summary>
+                        <pre class="mt-2 bg-gray-100 dark:bg-gray-800 p-2 rounded overflow-auto text-xs">${
+                          error instanceof Error
+                            ? error.message
+                            : "Unknown error"
+                        }</pre>
+                      </details>
                     </div>
                   </div>
-                `;
-              }
+                </div>
+              `;
             }
           }
         }
@@ -339,7 +340,50 @@ export function MarkdownPreview({
       // Call the async function
       renderDiagrams();
     }
-  }, [processedContent, actualRef, theme]);
+  }, [processedContent, actualRef]);
+
+  // Handle theme changes for existing Mermaid diagrams
+  useEffect(() => {
+    if (actualRef.current) {
+      const mermaidContainers = actualRef.current.querySelectorAll('.mermaid-container');
+      if (mermaidContainers.length > 0) {
+        // Re-render only Mermaid diagrams when theme changes
+        const renderDiagrams = async () => {
+          for (const container of mermaidContainers) {
+            const placeholder = container.closest('[data-block-id]');
+            if (placeholder) {
+              const blockId = placeholder.getAttribute('data-block-id');
+              const block = processedContent.codeBlocks.find(b => b.id === blockId);
+              
+              if (block && block.isMermaid) {
+                try {
+                  // Clear the container but keep the structure
+                  const svgContainer = container.querySelector('div');
+                  if (svgContainer) {
+                    const diagramId = `mermaid-${blockId}-${Date.now()}`;
+                    const processedCode = block.code
+                      .replace(/\r\n/g, "\n")
+                      .replace(/\r/g, "\n")
+                      .replace(/<div[^>]*>/g, "")
+                      .replace(/<\/div>/g, "")
+                      .replace(/<span[^>]*>/g, "")
+                      .replace(/<\/span>/g, "");
+
+                    const { svg } = await mermaid.render(diagramId, processedCode);
+                    svgContainer.innerHTML = svg;
+                  }
+                } catch (error) {
+                  console.error("Error updating mermaid diagram theme:", error);
+                }
+              }
+            }
+          }
+        };
+
+        renderDiagrams();
+      }
+    }
+  }, [theme, actualRef, processedContent.codeBlocks]);
 
   return (
     <div className={`flex flex-col h-full ${className}`}>
