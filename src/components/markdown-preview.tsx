@@ -4,6 +4,7 @@ import remarkGfm from 'remark-gfm'
 import remarkHtml from 'remark-html'
 import mermaid from 'mermaid'
 import { Button } from '@/components/ui/button'
+import { useTheme } from '@/contexts/theme-context'
 
 interface MarkdownPreviewProps {
   content: string
@@ -14,15 +15,17 @@ interface MarkdownPreviewProps {
 export function MarkdownPreview({ content, className, previewRef }: MarkdownPreviewProps) {
   const internalRef = useRef<HTMLDivElement>(null)
   const actualRef = previewRef || internalRef
+  const { theme } = useTheme()
 
-  // Initialize Mermaid
+  // Initialize and update Mermaid theme
   useEffect(() => {
+    const mermaidTheme = theme === 'dark' ? 'dark' : 'default'
     mermaid.initialize({
       startOnLoad: false,
-      theme: 'default',
+      theme: mermaidTheme,
       securityLevel: 'loose',
     })
-  }, [])
+  }, [theme])
 
   const renderedContent = useMemo(() => {
     try {

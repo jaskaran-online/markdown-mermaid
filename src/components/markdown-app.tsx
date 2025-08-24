@@ -3,6 +3,7 @@ import { MarkdownEditor } from './markdown-editor'
 import { MarkdownPreview } from './markdown-preview'
 import { useLocalStorage } from '@/hooks/use-local-storage'
 import { ExportUtils } from '@/lib/export-utils'
+import { ThemeToggle } from './theme-toggle'
 import { Button } from '@/components/ui/button'
 
 const DEFAULT_CONTENT = `# Welcome to Markdown + Mermaid Editor
@@ -151,6 +152,7 @@ export function MarkdownApp() {
           <Button variant="outline" size="sm" onClick={() => handleExport('docx')}>
             Export DOCX
           </Button>
+          <ThemeToggle />
         </div>
       </div>
 
