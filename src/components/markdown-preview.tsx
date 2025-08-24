@@ -360,13 +360,13 @@ export function MarkdownPreview({
     }
   }, [processedContent, actualRef]);
 
-  // Handle theme changes and zoom changes for existing Mermaid diagrams
+  // Handle theme changes for existing Mermaid diagrams
   useEffect(() => {
     if (actualRef.current) {
       const mermaidContainers =
         actualRef.current.querySelectorAll(".mermaid-container");
       if (mermaidContainers.length > 0) {
-        // Re-render only Mermaid diagrams when theme or zoom changes
+        // Re-render only Mermaid diagrams when theme changes
         const renderDiagrams = async () => {
           for (const container of mermaidContainers) {
             const placeholder = container.closest("[data-block-id]");
@@ -415,7 +415,7 @@ export function MarkdownPreview({
         renderDiagrams();
       }
     }
-  }, [theme, zoomLevel, actualRef, processedContent.codeBlocks]);
+  }, [theme, actualRef, processedContent.codeBlocks]);
 
   const handleZoomIn = () => {
     setZoomLevel((prev) => Math.min(prev + 25, 200));
@@ -497,23 +497,19 @@ export function MarkdownPreview({
 
       {/* Preview Content with Custom Scrollbar and Zoom */}
       <div className="flex-1 relative overflow-hidden">
-        <div
-          className="h-full overflow-auto custom-scrollbar"
-          style={{
-            transform: `scale(${zoomLevel / 100})`,
-            transformOrigin: "top left",
-            width: `${100 / (zoomLevel / 100)}%`,
-            height: `${100 / (zoomLevel / 100)}%`,
-          }}
-        >
+        <div className="h-full overflow-auto custom-scrollbar">
           <div className="p-4">
             <div
               ref={actualRef}
               className="markdown-content prose prose-sm max-w-none dark:prose-invert"
               style={{
+                // Use CSS zoom instead of transform for better stability
+                zoom: zoomLevel / 100,
+                // Fallback for browsers that don't support zoom
+                fontSize: zoomLevel !== 100 ? `${zoomLevel}%` : undefined,
                 // Ensure Mermaid diagrams are properly visible during zoom
                 overflow: "visible",
-              }}
+              } as React.CSSProperties}
               dangerouslySetInnerHTML={{ __html: processedContent.html }}
             />
           </div>

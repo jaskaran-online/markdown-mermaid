@@ -124,6 +124,16 @@
     height: auto !important;
   }
 
+  /* Ensure zoom works properly with markdown content */
+  .markdown-content {
+    transform-origin: top left;
+  }
+
+  /* Ensure Mermaid diagrams scale properly with zoom */
+  .markdown-content .mermaid-container {
+    transform-origin: top left;
+  }
+
   /* Test basic markdown styling */
   .prose h1 {
     @apply text-2xl font-bold mb-4;
