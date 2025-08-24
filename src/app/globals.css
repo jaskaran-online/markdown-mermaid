@@ -110,6 +110,18 @@
 
   .mermaid svg {
     @apply max-w-full h-auto;
+    overflow: visible !important;
+  }
+
+  /* Ensure Mermaid diagrams work properly with zoom */
+  .mermaid-container {
+    overflow: visible !important;
+  }
+
+  .mermaid-container svg {
+    overflow: visible !important;
+    max-width: 100% !important;
+    height: auto !important;
   }
 
   /* Test basic markdown styling */

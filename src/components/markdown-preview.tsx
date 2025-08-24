@@ -15,7 +15,14 @@ import { useTheme } from "@/contexts/theme-context";
 import { Modal } from "@/components/ui/modal";
 import { LargePreview } from "@/components/large-preview";
 import { MermaidDownloadModal } from "@/components/mermaid-download-modal";
-import { Maximize2, Download, ZoomIn, ZoomOut, RotateCcw, Move } from "lucide-react";
+import {
+  Maximize2,
+  Download,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  Move,
+} from "lucide-react";
 
 interface MarkdownPreviewProps {
   content: string;
@@ -280,10 +287,14 @@ export function MarkdownPreview({
               // Create container for diagram and download button
               const container = document.createElement("div");
               container.className = "relative group mermaid-container";
+              container.style.overflow = "visible";
 
               // Add the SVG
               const svgContainer = document.createElement("div");
               svgContainer.innerHTML = svg;
+              svgContainer.style.overflow = "visible";
+              svgContainer.style.maxWidth = "100%";
+              svgContainer.style.height = "auto";
               container.appendChild(svgContainer);
 
               // Add download button overlay
@@ -349,13 +360,13 @@ export function MarkdownPreview({
     }
   }, [processedContent, actualRef]);
 
-  // Handle theme changes for existing Mermaid diagrams
+  // Handle theme changes and zoom changes for existing Mermaid diagrams
   useEffect(() => {
     if (actualRef.current) {
       const mermaidContainers =
         actualRef.current.querySelectorAll(".mermaid-container");
       if (mermaidContainers.length > 0) {
-        // Re-render only Mermaid diagrams when theme changes
+        // Re-render only Mermaid diagrams when theme or zoom changes
         const renderDiagrams = async () => {
           for (const container of mermaidContainers) {
             const placeholder = container.closest("[data-block-id]");
@@ -384,6 +395,14 @@ export function MarkdownPreview({
                       processedCode
                     );
                     svgContainer.innerHTML = svg;
+                    
+                    // Ensure SVG is properly styled for zoom
+                    const svgElement = svgContainer.querySelector("svg");
+                    if (svgElement) {
+                      svgElement.style.overflow = "visible";
+                      svgElement.style.maxWidth = "100%";
+                      svgElement.style.height = "auto";
+                    }
                   }
                 } catch (error) {
                   console.error("Error updating mermaid diagram theme:", error);
@@ -396,14 +415,14 @@ export function MarkdownPreview({
         renderDiagrams();
       }
     }
-  }, [theme, actualRef, processedContent.codeBlocks]);
+  }, [theme, zoomLevel, actualRef, processedContent.codeBlocks]);
 
   const handleZoomIn = () => {
-    setZoomLevel(prev => Math.min(prev + 25, 200));
+    setZoomLevel((prev) => Math.min(prev + 25, 200));
   };
 
   const handleZoomOut = () => {
-    setZoomLevel(prev => Math.max(prev - 25, 50));
+    setZoomLevel((prev) => Math.max(prev - 25, 50));
   };
 
   const handleResetZoom = () => {
@@ -447,7 +466,7 @@ export function MarkdownPreview({
               <RotateCcw className="h-3 w-3" />
             </Button>
           </div>
-          
+
           {/* Expand/Collapse Button */}
           {onToggleExpand && (
             <Button
@@ -460,7 +479,7 @@ export function MarkdownPreview({
               {isExpanded ? "Collapse" : "Expand"}
             </Button>
           )}
-          
+
           <Button
             variant="outline"
             size="sm"
@@ -475,14 +494,14 @@ export function MarkdownPreview({
           </Button>
         </div>
       </div>
-      
+
       {/* Preview Content with Custom Scrollbar and Zoom */}
       <div className="flex-1 relative overflow-hidden">
-        <div 
+        <div
           className="h-full overflow-auto custom-scrollbar"
           style={{
             transform: `scale(${zoomLevel / 100})`,
-            transformOrigin: 'top left',
+            transformOrigin: "top left",
             width: `${100 / (zoomLevel / 100)}%`,
             height: `${100 / (zoomLevel / 100)}%`,
           }}
@@ -491,6 +510,10 @@ export function MarkdownPreview({
             <div
               ref={actualRef}
               className="markdown-content prose prose-sm max-w-none dark:prose-invert"
+              style={{
+                // Ensure Mermaid diagrams are properly visible during zoom
+                overflow: "visible",
+              }}
               dangerouslySetInnerHTML={{ __html: processedContent.html }}
             />
           </div>
