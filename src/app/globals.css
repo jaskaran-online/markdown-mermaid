@@ -70,4 +70,99 @@
   .mermaid svg {
     @apply max-w-full h-auto;
   }
+
+  /* Test basic markdown styling */
+  .prose h1 {
+    @apply text-2xl font-bold mb-4;
+  }
+
+  .prose h2 {
+    @apply text-xl font-semibold mb-3;
+  }
+
+  .prose strong {
+    @apply font-bold;
+  }
+
+  .prose em {
+    @apply italic;
+  }
+
+  .prose p {
+    @apply mb-4;
+  }
+
+  /* Fallback markdown styling */
+  .markdown-content h1 {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    color: hsl(var(--foreground));
+  }
+
+  .markdown-content h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: hsl(var(--foreground));
+  }
+
+  .markdown-content h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: hsl(var(--foreground));
+  }
+
+  .markdown-content strong {
+    font-weight: bold;
+  }
+
+  .markdown-content em {
+    font-style: italic;
+  }
+
+  .markdown-content p {
+    margin-bottom: 1rem;
+    line-height: 1.6;
+  }
+
+  .markdown-content ul,
+  .markdown-content ol {
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+  }
+
+  .markdown-content li {
+    margin-bottom: 0.25rem;
+  }
+
+  .markdown-content code {
+    background: hsl(var(--muted));
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+    font-family: 'Monaco', 'Menlo', monospace;
+    font-size: 0.875rem;
+  }
+
+  .markdown-content pre {
+    background: hsl(var(--muted));
+    padding: 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    margin-bottom: 1rem;
+  }
+
+  .markdown-content pre code {
+    background: transparent;
+    padding: 0;
+  }
+
+  .markdown-content blockquote {
+    border-left: 4px solid hsl(var(--border));
+    padding-left: 1rem;
+    margin: 1rem 0;
+    font-style: italic;
+    color: hsl(var(--muted-foreground));
+  }
 }

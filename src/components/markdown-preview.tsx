@@ -44,6 +44,7 @@ export function MarkdownPreview({ content, className, previewRef }: MarkdownPrev
         .use(remarkGfm)
         .use(remarkHtml, { sanitize: false })
         .processSync(processedContent)
+
       return processed.toString()
     } catch (error) {
       console.error('Error processing markdown:', error)
@@ -86,7 +87,7 @@ export function MarkdownPreview({ content, className, previewRef }: MarkdownPrev
       <div className="flex-1 p-4 overflow-auto">
         <div
           ref={actualRef}
-          className="prose prose-sm max-w-none dark:prose-invert"
+          className="markdown-content prose prose-sm max-w-none dark:prose-invert"
           dangerouslySetInnerHTML={{ __html: renderedContent }}
         />
       </div>
