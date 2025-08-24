@@ -17,7 +17,6 @@ import { LargePreview } from "@/components/large-preview";
 import { MermaidDownloadModal } from "@/components/mermaid-download-modal";
 import {
   Maximize2,
-  Download,
   ZoomIn,
   ZoomOut,
   RotateCcw,
@@ -360,62 +359,66 @@ export function MarkdownPreview({
     }
   }, [processedContent, actualRef]);
 
-  // Handle theme changes for existing Mermaid diagrams
+  // Handle Mermaid diagrams
   useEffect(() => {
-    if (actualRef.current) {
-      const mermaidContainers =
-        actualRef.current.querySelectorAll(".mermaid-container");
-      if (mermaidContainers.length > 0) {
-        // Re-render only Mermaid diagrams when theme changes
-        const renderDiagrams = async () => {
-          for (const container of mermaidContainers) {
-            const placeholder = container.closest("[data-block-id]");
-            if (placeholder) {
-              const blockId = placeholder.getAttribute("data-block-id");
-              const block = processedContent.codeBlocks.find(
-                (b) => b.id === blockId
-              );
+    if (!actualRef.current) return;
 
-              if (block && block.isMermaid) {
-                try {
-                  // Clear the container but keep the structure
-                  const svgContainer = container.querySelector("div");
-                  if (svgContainer) {
-                    const diagramId = `mermaid-${blockId}-${Date.now()}`;
-                    const processedCode = block.code
-                      .replace(/\r\n/g, "\n")
-                      .replace(/\r/g, "\n")
-                      .replace(/<div[^>]*>/g, "")
-                      .replace(/<\/div>/g, "")
-                      .replace(/<span[^>]*>/g, "")
-                      .replace(/<\/span>/g, "");
+    const mermaidContainers = actualRef.current.querySelectorAll<HTMLElement>(
+      '.mermaid-container'
+    );
 
-                    const { svg } = await mermaid.render(
-                      diagramId,
-                      processedCode
-                    );
-                    svgContainer.innerHTML = svg;
+    if (mermaidContainers.length > 0) {
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: theme === 'dark' ? 'dark' : 'default',
+        securityLevel: 'loose',
+      });
 
-                    // Ensure SVG is properly styled for zoom
-                    const svgElement = svgContainer.querySelector("svg");
-                    if (svgElement) {
-                      svgElement.style.overflow = "visible";
-                      svgElement.style.maxWidth = "100%";
-                      svgElement.style.height = "auto";
-                    }
-                  }
-                } catch (error) {
-                  console.error("Error updating mermaid diagram theme:", error);
+      mermaidContainers.forEach((container) => {
+        const mermaidCode = container.getAttribute('data-mermaid');
+        if (mermaidCode) {
+          try {
+            // Add loading class
+            container.classList.add('mermaid-loading');
+            
+            mermaid
+              .render(
+                `mermaid-${Math.random().toString(36).substr(2, 9)}`,
+                mermaidCode
+              )
+              .then(({ svg }) => {
+                const svgContainer = document.createElement('div');
+                svgContainer.innerHTML = svg;
+
+                // Ensure SVG is properly styled for zoom and responsive
+                const svgElement = svgContainer.querySelector("svg");
+                if (svgElement) {
+                  svgElement.style.overflow = "visible";
+                  svgElement.style.maxWidth = "100%";
+                  svgElement.style.height = "auto";
+                  svgElement.style.display = "block";
+                  svgElement.style.margin = "0 auto";
                 }
-              }
-            }
-          }
-        };
 
-        renderDiagrams();
-      }
+                container.innerHTML = '';
+                container.appendChild(svgContainer.firstChild as Node);
+                container.classList.remove('mermaid-loading');
+                container.classList.add('mermaid-loaded');
+              })
+              .catch(error => {
+                console.error('Error rendering mermaid diagram:', error);
+                container.classList.remove('mermaid-loading');
+                container.classList.add('mermaid-error');
+              });
+          } catch (error) {
+            console.error('Error rendering mermaid diagram:', error);
+            container.classList.remove('mermaid-loading');
+            container.classList.add('mermaid-error');
+          }
+        }
+      });
     }
-  }, [theme, actualRef, processedContent.codeBlocks]);
+  }, [theme, actualRef, processedContent.codeBlocks, zoomLevel]);
 
   const handleZoomIn = () => {
     setZoomLevel((prev) => Math.min(prev + 25, 200));
@@ -496,19 +499,33 @@ export function MarkdownPreview({
       </div>
 
       {/* Preview Content with Custom Scrollbar and Zoom */}
-      <div className="flex-1 relative overflow-hidden">
-        <div className="h-full overflow-auto custom-scrollbar">
-          <div className="p-4">
+      <div className="flex-1 relative overflow-auto">
+        <div 
+          className="h-full w-full custom-scrollbar"
+          style={{
+            overflow: 'auto',
+            transform: `scale(${zoomLevel / 100})`,
+            transformOrigin: 'top left',
+            width: '100%',
+            height: '100%',
+            minHeight: '100%',
+          }}
+        >
+          <div 
+            className="markdown-content p-4"
+            style={{
+              width: 'fit-content',
+              minWidth: '100%',
+              transformOrigin: 'top left',
+            }}
+          >
             <div
               ref={actualRef}
-              className="markdown-content prose prose-sm max-w-none dark:prose-invert"
+              className="prose prose-sm max-w-none dark:prose-invert"
               style={{
-                // Use CSS zoom instead of transform for better stability
-                zoom: zoomLevel / 100,
-                // Fallback for browsers that don't support zoom
-                fontSize: zoomLevel !== 100 ? `${zoomLevel}%` : undefined,
-                // Ensure Mermaid diagrams are properly visible during zoom
-                overflow: "visible",
+                width: '100%',
+                height: '100%',
+                overflow: 'visible',
               } as React.CSSProperties}
               dangerouslySetInnerHTML={{ __html: processedContent.html }}
             />
