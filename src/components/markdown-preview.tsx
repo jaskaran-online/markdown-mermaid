@@ -395,7 +395,7 @@ export function MarkdownPreview({
                       processedCode
                     );
                     svgContainer.innerHTML = svg;
-                    
+
                     // Ensure SVG is properly styled for zoom
                     const svgElement = svgContainer.querySelector("svg");
                     if (svgElement) {
