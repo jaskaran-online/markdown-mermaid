@@ -22,6 +22,7 @@ Build a fast, reliable, two‑pane Markdown editor with live preview that fully 
 - Safe rendering: sanitize HTML; never run untrusted scripts.
 - Web‑only, client‑side; no backend or sign‑in.
 - Persistence via localStorage; works offline.
+ - Minimal, modern UI using shadcn/ui components.
 
 ### Non‑Goals (initial release)
 
@@ -73,12 +74,15 @@ Preview
 
 Files and Persistence (Web‑only)
 
+- Multiple documents per session: create new, duplicate, rename, and close documents.
+- Document metadata stored in `localStorage` (id, title/filename, last opened, snapshot).
 - Open `.md` files via file picker or drag‑and‑drop (processed in memory; never uploaded).
 - Save/Export via browser download (File System Access API if available; otherwise blob download).
+- Custom filenames supported; default extension `.md` is enforced (append if missing).
 - Autosave: snapshot current document to `localStorage` on change (debounced ~2s).
 - “Dirty” indicator for unsaved changes; prompt on tab/window close if unsaved.
 - Recent files list in `localStorage` (names and timestamps; no full paths stored).
-- Optional in‑browser “Untitled” documents managed in `localStorage` until downloaded.
+- Optional in‑browser “Untitled` N`” documents managed in `localStorage` until downloaded.
 
 Export
 
@@ -99,6 +103,114 @@ Theming and Appearance
 - Light and dark themes; system auto option.
 - Consistent typography between preview and export (font family, sizes, code font).
 - Optional “reader” width for preview; toggle full‑width.
+
+Theme Tokens (shadcn/ui)
+
+- Use shadcn/ui token structure and CSS variables for consistent theming. Example base tokens:
+
+```
+:root {
+  --background: 255 255 255;      /* light */
+  --foreground: 17 24 39;         /* gray-900 */
+  --muted: 243 244 246;           /* gray-100 */
+  --muted-foreground: 107 114 128;/* gray-500 */
+  --card: 255 255 255;
+  --card-foreground: 17 24 39;
+  --popover: 255 255 255;
+  --popover-foreground: 17 24 39;
+  --primary: 37 99 235;           /* blue-600 */
+  --primary-foreground: 255 255 255;
+  --secondary: 229 231 235;       /* gray-200 */
+  --secondary-foreground: 17 24 39;
+  --accent: 59 130 246;           /* blue-500 */
+  --accent-foreground: 255 255 255;
+  --destructive: 220 38 38;       /* red-600 */
+  --destructive-foreground: 255 255 255;
+  --border: 229 231 235;          /* gray-200 */
+  --input: 229 231 235;
+  --ring: 59 130 246;             /* blue-500 */
+  --radius: 0.5rem;               /* 8px */
+  --font-sans: ui-sans-serif, system-ui, Segoe UI, Roboto, Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace;
+}
+.dark {
+  --background: 17 24 39;         /* gray-900 */
+  --foreground: 243 244 246;      /* gray-100 */
+  --muted: 31 41 55;              /* gray-800 */
+  --muted-foreground: 156 163 175;/* gray-400 */
+  --card: 17 24 39;
+  --card-foreground: 243 244 246;
+  --popover: 17 24 39;
+  --popover-foreground: 243 244 246;
+  --primary: 59 130 246;          /* blue-500 */
+  --primary-foreground: 255 255 255;
+  --secondary: 31 41 55;          /* gray-800 */
+  --secondary-foreground: 243 244 246;
+  --accent: 37 99 235;            /* blue-600 */
+  --accent-foreground: 255 255 255;
+  --destructive: 239 68 68;       /* red-500 */
+  --destructive-foreground: 255 255 255;
+  --border: 31 41 55;             /* gray-800 */
+  --input: 31 41 55;
+  --ring: 37 99 235;              /* blue-600 */
+  --radius: 0.5rem;
+}
+```
+
+- Editor/Preview specifics:
+  - Code font from `--font-mono`; base text from `--font-sans`.
+  - Mermaid theme auto-selects based on `.dark` presence; allow override via setting.
+  - Preview “reader width”: max-width 72ch in reader mode.
+
+Tailwind + shadcn/ui Integration
+
+- Configure Tailwind to read color tokens from CSS variables and to use `--radius` for rounded components.
+
+```ts
+// tailwind.config.ts
+import type { Config } from 'tailwindcss'
+
+export default <Partial<Config>>{
+  darkMode: ['class'],
+  content: ['./index.html', './src/**/*.{ts,tsx,js,jsx}'],
+  theme: {
+    extend: {
+      colors: {
+        background: 'rgb(var(--background) / <alpha-value>)',
+        foreground: 'rgb(var(--foreground) / <alpha-value>)',
+        muted: 'rgb(var(--muted) / <alpha-value>)',
+        'muted-foreground': 'rgb(var(--muted-foreground) / <alpha-value>)',
+        card: 'rgb(var(--card) / <alpha-value>)',
+        'card-foreground': 'rgb(var(--card-foreground) / <alpha-value>)',
+        popover: 'rgb(var(--popover) / <alpha-value>)',
+        'popover-foreground': 'rgb(var(--popover-foreground) / <alpha-value>)',
+        primary: 'rgb(var(--primary) / <alpha-value>)',
+        'primary-foreground': 'rgb(var(--primary-foreground) / <alpha-value>)',
+        secondary: 'rgb(var(--secondary) / <alpha-value>)',
+        'secondary-foreground': 'rgb(var(--secondary-foreground) / <alpha-value>)',
+        accent: 'rgb(var(--accent) / <alpha-value>)',
+        'accent-foreground': 'rgb(var(--accent-foreground) / <alpha-value>)',
+        destructive: 'rgb(var(--destructive) / <alpha-value>)',
+        'destructive-foreground': 'rgb(var(--destructive-foreground) / <alpha-value>)',
+        border: 'rgb(var(--border) / <alpha-value>)',
+        input: 'rgb(var(--input) / <alpha-value>)',
+        ring: 'rgb(var(--ring) / <alpha-value>)'
+      },
+      borderRadius: {
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)'
+      },
+      fontFamily: {
+        sans: 'var(--font-sans)',
+        mono: 'var(--font-mono)'
+      }
+    }
+  }
+}
+```
+
+- Use shadcn/ui CLI to scaffold components and ensure the CSS variables align with its styles. Enable dark mode by toggling the `dark` class on `html`.
 
 Accessibility (A11y)
 
@@ -152,6 +264,20 @@ Layout
 - Two resizable panes: editor (left), preview (right), with draggable splitter; pane widths persist across sessions.
 - Top app bar: File, Edit, View, Export, Help menus or a compact toolbar with icons and labels.
 - Status bar: file path, line/column, word count, theme toggle.
+ - Minimal, modern styling using shadcn/ui (buttons, dialogs, dropdowns, tabs, toasts, splitter).
+
+Multi‑Document Navigation
+
+- Tabs or a file drawer to switch between open documents; new/rename/duplicate from context menu.
+- Quick switcher (Cmd/Ctrl+P) lists recent/open documents.
+ - Tabs flow (default):
+   - New opens as a new tab to the right of the active tab.
+   - Close with middle‑click or `Cmd/Ctrl+W`; unsaved prompts appear inline on the tab.
+   - When tabs exceed width, enable scrollable tabs and an overflow menu.
+ - Drawer flow (optional, auto for many tabs):
+   - Left sidebar lists open and recent docs; supports drag‑to‑reorder and context actions.
+   - Collapsible to icons; toggled with `Cmd/Ctrl+B` or a toolbar button.
+ - Adaptive behavior: use tabs for ≤8 open docs; automatically suggest switching to drawer when >8.
 
 Flows
 
@@ -166,6 +292,29 @@ Editor Details
 - Find/Replace: `Ctrl/Cmd+F` and `Ctrl/Cmd+H`, with regex and case options.
 - Linting: optional Markdown lint rules (headings increment, trailing spaces) with inline hints.
 
+Keyboard Shortcuts
+
+- Global
+  - New document: `Cmd/Ctrl+N`
+  - Open: `Cmd/Ctrl+O`
+  - Save: `Cmd/Ctrl+S`; Save As: `Shift+Cmd/Ctrl+S`
+  - Export dialog: `Cmd/Ctrl+E`
+  - Quick switcher: `Cmd/Ctrl+P`
+- Tabs/Documents
+  - Close current: `Cmd/Ctrl+W` or middle‑click tab
+  - Next/Previous tab: `Ctrl+Tab` / `Ctrl+Shift+Tab`
+  - Move tab left/right: `Cmd/Ctrl+Alt+Left/Right`
+  - Switch to tab 1..9: `Cmd/Ctrl+1`..`Cmd/Ctrl+9`
+- Editor/Preview
+  - Toggle preview pane: `Cmd/Ctrl+\\`
+  - Toggle reader width: `Cmd/Ctrl+Shift+R`
+  - Find: `Cmd/Ctrl+F`; Replace: `Cmd/Ctrl+H`
+  - Bold/Italic/Link: `Cmd/Ctrl+B/I/K`
+  - Focus editor/preview: `Esc` cycles focus or `Cmd/Ctrl+1` (editor) / `Cmd/Ctrl+2` (preview)
+
+Notes
+- Some shortcuts may conflict with browser defaults; app should only handle them when the app is focused and, where possible, avoid overriding critical browser navigation (e.g., `Cmd/Ctrl+T`).
+
 Preview Details
 
 - Scroll sync: heading map; when cursor near H2 in editor, preview anchors to same section.
@@ -176,6 +325,35 @@ Mermaid Details
 
 - Diagram theme auto‑aligns with app theme; user can override per‑document in settings.
 - Render errors show a banner inside the diagram container with an expand/collapse for details.
+
+Theme Mapping (Mermaid → CSS tokens)
+
+- Use Mermaid's base theme with variables mapped to app CSS tokens to keep visuals consistent:
+
+```js
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'base',
+  themeVariables: {
+    primaryColor:        'rgb(var(--primary))',
+    primaryTextColor:    'rgb(var(--primary-foreground))',
+    lineColor:           'rgb(var(--foreground))',
+    secondaryColor:      'rgb(var(--muted))',
+    tertiaryColor:       'rgb(var(--card))',
+    noteBkgColor:        'rgb(var(--muted))',
+    noteTextColor:       'rgb(var(--foreground))',
+    textColor:           'rgb(var(--foreground))',
+    nodeBorder:          'rgb(var(--border))',
+    clusterBkg:          'rgb(var(--card))',
+    clusterBorder:       'rgb(var(--border))',
+    actorBkg:            'rgb(var(--card))',
+    actorBorder:         'rgb(var(--border))',
+    activationBkgColor:  'rgb(var(--accent))',
+    activationBorderColor:'rgb(var(--accent))',
+    sequenceNumberColor: 'rgb(var(--muted-foreground))'
+  }
+})
+```
 
 ## 7) Data Model and Storage
 
@@ -240,6 +418,12 @@ Acceptance Criteria (MVP)
 - Dark mode applies to both editor and preview; Mermaid respects dark theme.
 - Files open via menu and drag‑drop; autosave works; unsaved changes prompt on close.
 - No network access required to view, edit, render, or export.
+- Users can create multiple documents, switch between them, and save each with a custom filename; `.md` extension is applied by default if missing.
+- UI uses shadcn/ui components for primary controls (dialogs, menus, tabs, toasts) with a minimal, modern look in both light and dark themes.
+- Default naming uses `Untitled N.md` with the lowest available N; duplicates create `Copy of <name>.md` with numeric suffixes as needed.
+- Renaming enforces rules (no slashes, trimmed, ≤120 chars before extension) and resolves conflicts with ` (1)`, ` (2)`, etc.
+- Tabs overflow is scrollable with an overflow menu; drawer is suggested when >8 tabs.
+ - Keyboard shortcuts work as specified for new/open/save, tab switching, quick switcher, and preview toggling.
 
 Manual Test Scenarios
 
@@ -302,3 +486,5 @@ v1.2
 - GitHub‑flavored Markdown spec
 - Mermaid v10+ documentation
 - DOCX OOXML reference (for mapping styles)
+ - shadcn/ui docs
+ - Tailwind CSS docs (theming with CSS variables)
