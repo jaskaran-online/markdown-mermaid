@@ -38,6 +38,7 @@ export function MermaidDownloadModal({
       transparent: false,
       width: 800,
       height: 600,
+      quality: 0.9,
     });
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -84,6 +85,35 @@ export function MermaidDownloadModal({
   const themeOptions = [
     { value: "light", label: "Light", icon: Sun },
     { value: "dark", label: "Dark", icon: Moon },
+  ];
+
+  // Preset configurations for common use cases
+  const presetConfigs = [
+    {
+      name: "Web",
+      description: "Standard web resolution",
+      config: { width: 800, height: 600, quality: 0.8 },
+    },
+    {
+      name: "HD",
+      description: "High definition",
+      config: { width: 1920, height: 1080, quality: 0.9 },
+    },
+    {
+      name: "Print",
+      description: "Print quality",
+      config: { width: 2400, height: 1800, quality: 1.0 },
+    },
+    {
+      name: "Mobile",
+      description: "Mobile optimized",
+      config: { width: 400, height: 300, quality: 0.7 },
+    },
+    {
+      name: "Social",
+      description: "Social media",
+      config: { width: 1200, height: 630, quality: 0.85 },
+    },
   ];
 
   return (
@@ -228,6 +258,63 @@ export function MermaidDownloadModal({
             </p>
           )}
         </div>
+
+        {/* Preset Configurations */}
+        <div>
+          <h3 className="text-sm font-medium mb-3">Quick Presets</h3>
+          <div className="grid grid-cols-2 gap-2">
+            {presetConfigs.map((preset) => (
+              <button
+                key={preset.name}
+                onClick={() =>
+                  setDownloadOptions({
+                    ...downloadOptions,
+                    ...preset.config,
+                  })
+                }
+                className="p-3 border border-border rounded-lg text-left hover:border-primary/50 transition-colors"
+              >
+                <div className="font-medium text-sm">{preset.name}</div>
+                <div className="text-xs text-muted-foreground">
+                  {preset.description}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Quality Control */}
+        {(downloadOptions.format === "png" || downloadOptions.format === "jpg") && (
+          <div>
+            <h3 className="text-sm font-medium mb-3">Quality</h3>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Quality</span>
+                <span className="text-sm font-medium">
+                  {Math.round((downloadOptions.quality || 0.9) * 100)}%
+                </span>
+              </div>
+              <input
+                type="range"
+                min="0.1"
+                max="1"
+                step="0.05"
+                value={downloadOptions.quality || 0.9}
+                onChange={(e) =>
+                  setDownloadOptions({
+                    ...downloadOptions,
+                    quality: parseFloat(e.target.value),
+                  })
+                }
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Low</span>
+                <span>High</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Dimensions */}
         <div>

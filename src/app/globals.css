@@ -386,4 +386,27 @@
   .markdown-content .group .opacity-0 {
     transition: opacity 0.2s ease-in-out;
   }
+
+  /* Custom slider styling */
+  .slider {
+    background: hsl(var(--muted));
+  }
+
+  .slider::-webkit-slider-thumb {
+    appearance: none;
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: hsl(var(--primary));
+    cursor: pointer;
+  }
+
+  .slider::-moz-range-thumb {
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: hsl(var(--primary));
+    cursor: pointer;
+    border: none;
+  }
 }
