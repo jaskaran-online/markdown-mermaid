@@ -21,8 +21,11 @@ const CURRENT_DOCUMENT_KEY = 'markdown-mermaid-current-document'
 export function useLocalStorage() {
   const [documents, setDocuments] = useState<Document[]>([])
   const [recentFiles, setRecentFiles] = useState<RecentFile[]>([])
-  const [currentDocument, setCurrentDocument] = useState<Document | null>(null)
+  const [currentDocumentId, setCurrentDocumentId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+
+  // Get current document from documents array
+  const currentDocument = documents.find(doc => doc.id === currentDocumentId) || null
 
   // Load data from localStorage on mount
   useEffect(() => {
@@ -40,7 +43,7 @@ export function useLocalStorage() {
       }
 
       if (storedCurrentDocument) {
-        setCurrentDocument(JSON.parse(storedCurrentDocument))
+        setCurrentDocumentId(JSON.parse(storedCurrentDocument))
       }
     } catch (error) {
       console.error('Error loading from localStorage:', error)
@@ -73,11 +76,11 @@ export function useLocalStorage() {
   const saveCurrentDocument = useCallback((doc: Document | null) => {
     try {
       if (doc) {
-        localStorage.setItem(CURRENT_DOCUMENT_KEY, JSON.stringify(doc))
+        localStorage.setItem(CURRENT_DOCUMENT_KEY, JSON.stringify(doc.id))
       } else {
         localStorage.removeItem(CURRENT_DOCUMENT_KEY)
       }
-      setCurrentDocument(doc)
+      setCurrentDocumentId(doc?.id || null)
     } catch (error) {
       console.error('Error saving current document:', error)
     }
@@ -140,6 +143,29 @@ export function useLocalStorage() {
     }
   }, [documents, recentFiles, saveCurrentDocument, saveRecentFiles])
 
+  // Switch to a document
+  const switchDocument = useCallback((id: string) => {
+    setCurrentDocumentId(id)
+    localStorage.setItem(CURRENT_DOCUMENT_KEY, JSON.stringify(id))
+  }, [])
+
+  // Close a document
+  const closeDocument = useCallback((id: string) => {
+    const updatedDocs = documents.filter(doc => doc.id !== id)
+    saveDocuments(updatedDocs)
+
+    // If closing current document, switch to another or set to null
+    if (currentDocumentId === id) {
+      const nextDoc = updatedDocs[0] || null
+      if (nextDoc) {
+        switchDocument(nextDoc.id)
+      } else {
+        setCurrentDocumentId(null)
+        localStorage.removeItem(CURRENT_DOCUMENT_KEY)
+      }
+    }
+  }, [documents, currentDocumentId, saveDocuments, switchDocument])
+
   // Autosave current document
   const autosaveDocument = useCallback((content: string) => {
     if (currentDocument) {
@@ -151,11 +177,14 @@ export function useLocalStorage() {
     documents,
     recentFiles,
     currentDocument,
+    currentDocumentId,
     isLoading,
     createDocument,
     updateDocument,
     deleteDocument,
     loadDocument,
+    switchDocument,
+    closeDocument,
     autosaveDocument,
   }
 }

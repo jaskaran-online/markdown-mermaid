@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { MarkdownEditor } from './markdown-editor'
 import { MarkdownPreview } from './markdown-preview'
+import { DocumentTabs } from './document-tabs'
 import { useLocalStorage } from '@/hooks/use-local-storage'
 import { ExportUtils } from '@/lib/export-utils'
 import { ThemeToggle } from './theme-toggle'
@@ -45,11 +46,15 @@ console.log('Hello, World!');
 
 export function MarkdownApp() {
   const {
+    documents,
     currentDocument,
+    currentDocumentId,
     isLoading,
     createDocument,
     updateDocument,
     autosaveDocument,
+    switchDocument,
+    closeDocument,
   } = useLocalStorage()
 
   const [content, setContent] = useState(DEFAULT_CONTENT)
@@ -127,16 +132,8 @@ export function MarkdownApp() {
       <div className="flex items-center justify-between p-2 border-b bg-background">
         <div className="flex items-center gap-2">
           <h1 className="text-lg font-semibold">Markdown + Mermaid Editor</h1>
-          {currentDocument && (
-            <span className="text-sm text-muted-foreground">
-              {currentDocument.title}
-            </span>
-          )}
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleNewDocument}>
-            New
-          </Button>
           <Button variant="outline" size="sm" onClick={handleSave}>
             Save
           </Button>
@@ -155,6 +152,15 @@ export function MarkdownApp() {
           <ThemeToggle />
         </div>
       </div>
+
+      {/* Document tabs */}
+      <DocumentTabs
+        documents={documents}
+        currentDocumentId={currentDocumentId}
+        onSwitchDocument={switchDocument}
+        onCloseDocument={closeDocument}
+        onNewDocument={handleNewDocument}
+      />
 
       {/* Main content */}
       <div className="flex-1 flex">
