@@ -8,10 +8,12 @@ import { Button } from '@/components/ui/button'
 interface MarkdownPreviewProps {
   content: string
   className?: string
+  previewRef?: React.RefObject<HTMLDivElement | null>
 }
 
-export function MarkdownPreview({ content, className }: MarkdownPreviewProps) {
-  const previewRef = useRef<HTMLDivElement>(null)
+export function MarkdownPreview({ content, className, previewRef }: MarkdownPreviewProps) {
+  const internalRef = useRef<HTMLDivElement>(null)
+  const actualRef = previewRef || internalRef
 
   // Initialize Mermaid
   useEffect(() => {
@@ -37,8 +39,8 @@ export function MarkdownPreview({ content, className }: MarkdownPreviewProps) {
 
   // Render Mermaid diagrams after content is updated
   useEffect(() => {
-    if (previewRef.current) {
-      const mermaidElements = previewRef.current.querySelectorAll('.mermaid')
+    if (actualRef.current) {
+      const mermaidElements = actualRef.current.querySelectorAll('.mermaid')
       mermaidElements.forEach(async (element) => {
         try {
           const { svg } = await mermaid.render(`mermaid-${Math.random()}`, element.textContent || '')
@@ -65,7 +67,7 @@ export function MarkdownPreview({ content, className }: MarkdownPreviewProps) {
       </div>
       <div className="flex-1 p-4 overflow-auto">
         <div
-          ref={previewRef}
+          ref={actualRef}
           className="prose prose-sm max-w-none dark:prose-invert"
           dangerouslySetInnerHTML={{ __html: renderedContent }}
         />

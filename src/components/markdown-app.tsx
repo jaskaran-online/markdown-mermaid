@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { MarkdownEditor } from './markdown-editor'
 import { MarkdownPreview } from './markdown-preview'
 import { useLocalStorage } from '@/hooks/use-local-storage'
+import { ExportUtils } from '@/lib/export-utils'
 import { Button } from '@/components/ui/button'
 
 const DEFAULT_CONTENT = `# Welcome to Markdown + Mermaid Editor
@@ -51,6 +52,7 @@ export function MarkdownApp() {
   } = useLocalStorage()
 
   const [content, setContent] = useState(DEFAULT_CONTENT)
+  const previewRef = useRef<HTMLDivElement>(null)
 
   // Load current document on mount
   useEffect(() => {
@@ -86,6 +88,30 @@ export function MarkdownApp() {
     }
   }
 
+  const handleExport = async (format: 'md' | 'html' | 'pdf' | 'docx') => {
+    const title = currentDocument?.title || 'Document'
+
+    try {
+      switch (format) {
+        case 'md':
+          ExportUtils.exportToMarkdown(content, `${title}.md`)
+          break
+        case 'html':
+          await ExportUtils.exportToHTML(content, { title })
+          break
+        case 'pdf':
+          await ExportUtils.exportToPDF(content, title, previewRef.current || undefined)
+          break
+        case 'docx':
+          await ExportUtils.exportToDOCX(content, title)
+          break
+      }
+    } catch (error) {
+      console.error(`Error exporting to ${format}:`, error)
+      alert(`Error exporting to ${format.toUpperCase()}. Please try again.`)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="h-screen flex items-center justify-center">
@@ -113,6 +139,18 @@ export function MarkdownApp() {
           <Button variant="outline" size="sm" onClick={handleSave}>
             Save
           </Button>
+          <Button variant="outline" size="sm" onClick={() => handleExport('md')}>
+            Export MD
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => handleExport('html')}>
+            Export HTML
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => handleExport('pdf')}>
+            Export PDF
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => handleExport('docx')}>
+            Export DOCX
+          </Button>
         </div>
       </div>
 
@@ -129,6 +167,7 @@ export function MarkdownApp() {
           <MarkdownPreview
             content={content}
             className="h-full"
+            previewRef={previewRef}
           />
         </div>
       </div>
