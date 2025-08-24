@@ -214,19 +214,6 @@ export function MarkdownPreview({
               placeholder.innerHTML = svg;
             } catch (error) {
               console.error("Error rendering mermaid diagram:", error);
-              const errorMessage =
-                error instanceof Error ? error.message : "Unknown error";
-
-              // Extract more specific error information
-              let specificError = errorMessage;
-              if (errorMessage.includes("Parse error")) {
-                specificError = "Syntax error in diagram definition";
-              } else if (errorMessage.includes("Invalid")) {
-                specificError = "Invalid diagram syntax";
-              } else if (errorMessage.includes("Unknown")) {
-                specificError = "Unknown diagram type or syntax";
-              }
-
               placeholder.innerHTML = `
                 <div class="text-red-500 p-3 border border-red-300 rounded bg-red-50 dark:bg-red-900/20 mb-4">
                   <div class="flex items-start gap-2">
@@ -235,14 +222,14 @@ export function MarkdownPreview({
                     </svg>
                     <div class="flex-1">
                       <strong class="block mb-1">Mermaid Diagram Error</strong>
-                      <p class="text-sm mb-2">${specificError}</p>
+                      <p class="text-sm mb-2">Could not render diagram. Please check the syntax.</p>
                       <details class="text-xs">
                         <summary class="cursor-pointer hover:text-red-700 dark:hover:text-red-300">Show diagram code</summary>
                         <pre class="mt-2 bg-gray-100 dark:bg-gray-800 p-2 rounded overflow-auto text-xs">${block.code}</pre>
                       </details>
                       <details class="text-xs mt-2">
                         <summary class="cursor-pointer hover:text-red-700 dark:hover:text-red-300">Show full error</summary>
-                        <pre class="mt-2 bg-gray-100 dark:bg-gray-800 p-2 rounded overflow-auto text-xs">${errorMessage}</pre>
+                        <pre class="mt-2 bg-gray-100 dark:bg-gray-800 p-2 rounded overflow-auto text-xs">${error instanceof Error ? error.message : 'Unknown error'}</pre>
                       </details>
                     </div>
                   </div>

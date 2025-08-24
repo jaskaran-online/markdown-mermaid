@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import sample from "@/components/sample.md"
 import { MarkdownEditor } from "./markdown-editor";
 import { MarkdownPreview } from "./markdown-preview";
 import { DocumentTabs } from "./document-tabs";
@@ -10,7 +9,7 @@ import { ExportUtils } from "@/lib/export-utils";
 import { ThemeToggle } from "./theme-toggle";
 import { Button } from "@/components/ui/button";
 
-// Import sample content
+// Sample content - fallback if markdown import fails
 const SAMPLE_CONTENT = `# SEO-Friendly Blog System - Mermaid Diagrams Collection
 
 ## 1. Admin User Flow
@@ -575,6 +574,7 @@ export function MarkdownApp() {
   } = useLocalStorage();
 
   const [content, setContent] = useState(DEFAULT_CONTENT);
+  const [urlInput, setUrlInput] = useState("");
   const previewRef = useRef<HTMLDivElement>(null);
 
   // Load current document on mount
@@ -611,6 +611,33 @@ export function MarkdownApp() {
     setContent(SAMPLE_CONTENT);
     if (currentDocument) {
       updateDocument(currentDocument.id, { content: SAMPLE_CONTENT });
+    }
+  };
+
+  const handleLoadFromUrl = async () => {
+    if (!urlInput) return;
+
+    try {
+      let url = urlInput;
+      // Check if it's a GitHub Gist URL
+      if (url.includes("gist.github.com")) {
+        // Convert to raw URL
+        url =
+          url.replace("gist.github.com", "gist.githubusercontent.com") + "/raw";
+      }
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch from URL: ${response.statusText}`);
+      }
+      const text = await response.text();
+      setContent(text);
+      if (currentDocument) {
+        updateDocument(currentDocument.id, { content: text });
+      }
+    } catch (error) {
+      console.error("Error loading from URL:", error);
+      alert("Failed to load from URL. Please check the URL and try again.");
     }
   };
 
@@ -664,6 +691,16 @@ export function MarkdownApp() {
           <h1 className="text-lg font-semibold">Markdown + Mermaid Editor</h1>
         </div>
         <div className="flex gap-2">
+          <input
+            type="text"
+            value={urlInput}
+            onChange={(e) => setUrlInput(e.target.value)}
+            placeholder="Enter Gist URL or file path"
+            className="border px-2 py-1 rounded-md text-sm"
+          />
+          <Button variant="outline" size="sm" onClick={handleLoadFromUrl}>
+            Load from URL
+          </Button>
           <Button variant="outline" size="sm" onClick={handleSave}>
             Save
           </Button>
