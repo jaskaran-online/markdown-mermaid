@@ -8,6 +8,7 @@ import { useLocalStorage } from "@/hooks/use-local-storage";
 import { ExportUtils } from "@/lib/export-utils";
 import { ThemeToggle } from "./theme-toggle";
 import { Button } from "@/components/ui/button";
+import { useTheme } from "@/contexts/theme-context";
 
 // Sample content - fallback if markdown import fails
 const SAMPLE_CONTENT = `# SEO-Friendly Blog System - Mermaid Diagrams Collection
@@ -573,6 +574,7 @@ export function MarkdownApp() {
     closeDocument,
   } = useLocalStorage();
 
+  const { theme } = useTheme();
   const [content, setContent] = useState(DEFAULT_CONTENT);
   const [urlInput, setUrlInput] = useState("");
   const previewRef = useRef<HTMLDivElement>(null);
@@ -656,7 +658,10 @@ export function MarkdownApp() {
           ExportUtils.exportToMarkdown(content, `${title}.md`);
           break;
         case "html":
-          await ExportUtils.exportToHTML(content, { title });
+          await ExportUtils.exportToHTML(content, { 
+            title, 
+            theme: theme === "dark" ? "dark" : "light" 
+          });
           break;
         case "pdf":
           await ExportUtils.exportToPDF(
@@ -666,7 +671,7 @@ export function MarkdownApp() {
           );
           break;
         case "docx":
-          await ExportUtils.exportToDOCX(content, title);
+          await ExportUtils.exportToDOCX(content, title, theme === "dark" ? "dark" : "light");
           break;
       }
     } catch (error) {

@@ -1,6 +1,7 @@
-import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx'
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, ImageRun } from 'docx'
 import { jsPDF } from 'jspdf'
 import html2canvas from 'html2canvas'
+import { MermaidUtils, MermaidImage } from './mermaid-utils'
 
 export interface ExportOptions {
   title?: string
@@ -19,6 +20,27 @@ export class ExportUtils {
     options: ExportOptions = {}
   ) {
     const { title = 'Document', theme = 'light' } = options
+
+    // Convert Mermaid diagrams to images for HTML export
+    let processedContent = content;
+    let mermaidImages: MermaidImage[] = [];
+    
+    try {
+      const result = await MermaidUtils.extractAndConvertMermaidDiagrams(content, theme);
+      processedContent = result.content;
+      mermaidImages = result.images;
+    } catch (error) {
+      console.error('Error converting mermaid diagrams for HTML:', error);
+      // Continue with original content if mermaid conversion fails
+    }
+
+    // Replace image placeholders with actual image data URLs
+    let finalContent = processedContent;
+    mermaidImages.forEach((image, index) => {
+      const placeholder = `![Mermaid Diagram ${index + 1}](mermaid-diagram-${index + 1}.png)`;
+      const imageTag = `<img src="${image.dataUrl}" alt="Mermaid Diagram ${index + 1}" style="max-width: 100%; height: auto; display: block; margin: 1rem auto;" />`;
+      finalContent = finalContent.replace(placeholder, imageTag);
+    });
 
     const html = `
 <!DOCTYPE html>
@@ -81,10 +103,16 @@ export class ExportUtils {
             margin: 1rem 0;
             text-align: center;
         }
+        img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
     </style>
 </head>
 <body>
-    ${content}
+    ${finalContent}
 </body>
 </html>`
 
@@ -160,7 +188,8 @@ export class ExportUtils {
 
   static async exportToDOCX(
     content: string,
-    title: string = 'Document'
+    title: string = 'Document',
+    theme: 'light' | 'dark' = 'light'
   ) {
     const paragraphs: Paragraph[] = []
 
@@ -172,11 +201,78 @@ export class ExportUtils {
       })
     )
 
-    // Simple content processing - in a real app, you'd use a more sophisticated parser
-    const lines = content.split('\n')
+    // Convert Mermaid diagrams to images
+    let processedContent = content;
+    let mermaidImages: MermaidImage[] = [];
+    
+    try {
+      const result = await MermaidUtils.extractAndConvertMermaidDiagrams(content, theme);
+      processedContent = result.content;
+      mermaidImages = result.images;
+    } catch (error) {
+      console.error('Error converting mermaid diagrams:', error);
+      // Continue with original content if mermaid conversion fails
+    }
+
+    // Process content and handle image placeholders
+    const lines = processedContent.split('\n')
     let currentParagraph: TextRun[] = []
 
     for (const line of lines) {
+      // Check for image placeholders (mermaid diagrams)
+      const imageMatch = line.match(/!\[Mermaid Diagram (\d+)\]\(mermaid-diagram-(\d+)\.png\)/)
+      
+      if (imageMatch) {
+        // Add any pending paragraph content
+        if (currentParagraph.length > 0) {
+          paragraphs.push(new Paragraph({ children: currentParagraph }))
+          currentParagraph = []
+        }
+        
+        // Add the mermaid diagram as an image
+        const imageIndex = parseInt(imageMatch[1]) - 1
+        if (mermaidImages[imageIndex]) {
+          try {
+            const image = mermaidImages[imageIndex]
+            const pngDataUrl = await MermaidUtils.svgToPngDataUrl(image.svg, image.width, image.height)
+            
+            // Convert data URL to buffer
+            const base64Data = pngDataUrl.split(',')[1]
+            const imageBuffer = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0))
+            
+            paragraphs.push(
+              new Paragraph({
+                children: [
+                  new ImageRun({
+                    data: imageBuffer,
+                    transformation: {
+                      width: Math.min(image.width, 600), // Max width 600px
+                      height: Math.min(image.height, 400), // Max height 400px
+                    },
+                    type: 'png',
+                  }),
+                ],
+              })
+            )
+          } catch (error) {
+            console.error('Error adding mermaid image to DOC:', error)
+            // Add fallback text if image fails
+            paragraphs.push(
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `[Mermaid Diagram ${imageMatch[1]} - Image conversion failed]`,
+                    italics: true,
+                  }),
+                ],
+              })
+            )
+          }
+        }
+        continue
+      }
+
+      // Handle regular markdown content
       if (line.startsWith('# ')) {
         if (currentParagraph.length > 0) {
           paragraphs.push(new Paragraph({ children: currentParagraph }))
