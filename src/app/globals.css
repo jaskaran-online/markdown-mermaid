@@ -410,3 +410,51 @@
     border: none;
   }
 }
+
+.mermaid-container {
+  max-height: 80vh;
+  overflow: auto;
+  position: relative;
+}
+
+.mermaid-zoom-controls {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 10;
+}
+
+.mermaid-zoom-controls button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background-color: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  border: 1px solid hsl(var(--border));
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.mermaid-zoom-controls button:hover {
+  background-color: hsl(var(--muted));
+}
+
+.zoom-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 24px;
+  background-color: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  border: 1px solid hsl(var(--border));
+  border-radius: 12px;
+  font-size: 12px;
+  margin-top: 4px;
+}
