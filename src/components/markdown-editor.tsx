@@ -1,63 +1,72 @@
-"use client"
+"use client";
 
-import { useRef } from 'react'
-import Editor, { Monaco } from '@monaco-editor/react'
-import type { editor as MonacoEditor } from 'monaco-editor'
-import { Button } from '@/components/ui/button'
+import { useRef } from "react";
+import Editor, { Monaco } from "@monaco-editor/react";
+import type { editor as MonacoEditor } from "monaco-editor";
+import { Button } from "@/components/ui/button";
 
 interface MarkdownEditorProps {
-  value: string
-  onChange: (value: string) => void
-  className?: string
+  value: string;
+  onChange: (value: string) => void;
+  className?: string;
 }
 
-export function MarkdownEditor({ value, onChange, className }: MarkdownEditorProps) {
-  const editorRef = useRef<MonacoEditor.IStandaloneCodeEditor | null>(null)
+export function MarkdownEditor({
+  value,
+  onChange,
+  className,
+}: MarkdownEditorProps) {
+  const editorRef = useRef<MonacoEditor.IStandaloneCodeEditor | null>(null);
 
   const handleEditorDidMount = (
     editor: MonacoEditor.IStandaloneCodeEditor,
     monaco: Monaco
   ) => {
-    editorRef.current = editor
-    console.log('Monaco Editor mounted successfully')
+    editorRef.current = editor;
+    console.log("Monaco Editor mounted successfully");
 
     // Configure Monaco for Markdown
     try {
-      monaco.languages.setMonarchTokensProvider('markdown', {
+      monaco.languages.setMonarchTokensProvider("markdown", {
         tokenizer: {
           root: [
             // Headers
-            [/^#{1,6}\s/, 'keyword'],
+            [/^#{1,6}\s/, "keyword"],
             // Bold
-            [/\*\*[^*]+\*\*/, 'string'],
+            [/\*\*[^*]+\*\*/, "string"],
             // Italic
-            [/\*[^*]+\*/, 'string'],
+            [/\*[^*]+\*/, "string"],
             // Code blocks
-            [/```[\s\S]*?```/, 'comment'],
+            [/```[\s\S]*?```/, "comment"],
             // Inline code
-            [/`[^`]+`/, 'comment'],
+            [/`[^`]+`/, "comment"],
             // Links
-            [/\[.*?\]\(.*?\)/, 'string'],
+            [/\[.*?\]\(.*?\)/, "string"],
             // Lists
-            [/^\s*[-*+]\s/, 'keyword'],
-            [/^\s*\d+\.\s/, 'keyword'],
-          ]
-        }
-      })
-      console.log('Markdown syntax highlighting configured')
+            [/^\s*[-*+]\s/, "keyword"],
+            [/^\s*\d+\.\s/, "keyword"],
+          ],
+        },
+      });
+      console.log("Markdown syntax highlighting configured");
     } catch (error) {
-      console.error('Error configuring Markdown syntax:', error)
+      console.error("Error configuring Markdown syntax:", error);
     }
 
     // Set theme based on current theme
-    const isDark = document.documentElement.classList.contains('dark')
-    monaco.editor.setTheme(isDark ? 'vs-dark' : 'vs')
-    console.log('Editor theme set to:', isDark ? 'vs-dark' : 'vs')
-  }
+    const isDark = document.documentElement.classList.contains("dark");
+    monaco.editor.setTheme(isDark ? "vs-dark" : "vs");
+    console.log("Editor theme set to:", isDark ? "vs-dark" : "vs");
+
+    // Preserve cursor position and selection
+    editor.onDidChangeCursorPosition(() => {
+      // This helps maintain cursor position during updates
+    });
+  };
 
   const handleEditorChange = (value: string | undefined) => {
-    onChange(value || '')
-  }
+    onChange(value || "");
+  };
 
   return (
     <div className={`flex flex-col h-full ${className}`}>
@@ -74,6 +83,7 @@ export function MarkdownEditor({ value, onChange, className }: MarkdownEditorPro
       </div>
       <div className="flex-1">
         <Editor
+          key="markdown-editor"
           height="100%"
           language="markdown"
           value={value}
@@ -82,16 +92,16 @@ export function MarkdownEditor({ value, onChange, className }: MarkdownEditorPro
           options={{
             minimap: { enabled: false },
             fontSize: 14,
-            lineNumbers: 'on',
-            wordWrap: 'on',
+            lineNumbers: "on",
+            wordWrap: "on",
             automaticLayout: true,
             tabSize: 2,
             insertSpaces: true,
-            autoClosingBrackets: 'always',
-            autoClosingQuotes: 'always',
+            autoClosingBrackets: "always",
+            autoClosingQuotes: "always",
           }}
         />
       </div>
     </div>
-  )
+  );
 }

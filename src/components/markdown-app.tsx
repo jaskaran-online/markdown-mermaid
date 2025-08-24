@@ -1,13 +1,13 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { MarkdownEditor } from './markdown-editor'
-import { MarkdownPreview } from './markdown-preview'
-import { DocumentTabs } from './document-tabs'
-import { useLocalStorage } from '@/hooks/use-local-storage'
-import { ExportUtils } from '@/lib/export-utils'
-import { ThemeToggle } from './theme-toggle'
-import { Button } from '@/components/ui/button'
+import { useState, useEffect, useCallback, useRef } from "react";
+import { MarkdownEditor } from "./markdown-editor";
+import { MarkdownPreview } from "./markdown-preview";
+import { DocumentTabs } from "./document-tabs";
+import { useLocalStorage } from "@/hooks/use-local-storage";
+import { ExportUtils } from "@/lib/export-utils";
+import { ThemeToggle } from "./theme-toggle";
+import { Button } from "@/components/ui/button";
 
 const DEFAULT_CONTENT = `# Welcome to Markdown + Mermaid Editor
 
@@ -72,7 +72,7 @@ You can type here and see the preview update in real-time!
 \`\`\`javascript
 console.log('Hello, World!');
 \`\`\`
-`
+`;
 
 export function MarkdownApp() {
   const {
@@ -82,78 +82,83 @@ export function MarkdownApp() {
     isLoading,
     createDocument,
     updateDocument,
-    autosaveDocument,
     switchDocument,
     closeDocument,
-  } = useLocalStorage()
+  } = useLocalStorage();
 
-  const [content, setContent] = useState(DEFAULT_CONTENT)
-  const previewRef = useRef<HTMLDivElement>(null)
+  const [content, setContent] = useState(DEFAULT_CONTENT);
+  const previewRef = useRef<HTMLDivElement>(null);
 
   // Load current document on mount
   useEffect(() => {
     if (!isLoading && currentDocument) {
-      setContent(currentDocument.content)
+      setContent(currentDocument.content);
     } else if (!isLoading && !currentDocument) {
       // Create a new document if none exists
-      const newDoc = createDocument('Untitled', DEFAULT_CONTENT)
-      setContent(newDoc.content)
+      const newDoc = createDocument("Untitled", DEFAULT_CONTENT);
+      setContent(newDoc.content);
     }
-  }, [isLoading, currentDocument, createDocument])
+  }, [isLoading, currentDocument, createDocument]);
 
   // Autosave with debouncing
-  const handleContentChange = useCallback((newContent: string) => {
-    setContent(newContent)
+  const handleContentChange = useCallback(
+    (newContent: string) => {
+      setContent(newContent);
 
-    // Debounced autosave
-    const timeoutId = setTimeout(() => {
-      autosaveDocument(newContent)
-    }, 2000)
-
-    return () => clearTimeout(timeoutId)
-  }, [autosaveDocument])
+      // Use a more stable approach without causing editor focus issues
+      if (currentDocument) {
+        // Update document immediately without debouncing to prevent cursor jumping
+        updateDocument(currentDocument.id, { content: newContent });
+      }
+    },
+    [currentDocument, updateDocument]
+  );
 
   const handleNewDocument = () => {
-    const newDoc = createDocument('Untitled', DEFAULT_CONTENT)
-    setContent(newDoc.content)
-  }
+    const newDoc = createDocument("Untitled", DEFAULT_CONTENT);
+    setContent(newDoc.content);
+  };
 
   const handleSave = () => {
     if (currentDocument) {
-      updateDocument(currentDocument.id, { content })
+      updateDocument(currentDocument.id, { content });
     }
-  }
+  };
 
-  const handleExport = async (format: 'md' | 'html' | 'pdf' | 'docx') => {
-    const title = currentDocument?.title || 'Document'
+  const handleExport = async (format: "md" | "html" | "pdf" | "docx") => {
+    const title = currentDocument?.title || "Document";
 
     try {
       switch (format) {
-        case 'md':
-          ExportUtils.exportToMarkdown(content, `${title}.md`)
-          break
-        case 'html':
-          await ExportUtils.exportToHTML(content, { title })
-          break
-        case 'pdf':
-          await ExportUtils.exportToPDF(content, title, previewRef.current || undefined)
-          break
-        case 'docx':
-          await ExportUtils.exportToDOCX(content, title)
-          break
+        case "md":
+          ExportUtils.exportToMarkdown(content, `${title}.md`);
+          break;
+        case "html":
+          await ExportUtils.exportToHTML(content, { title });
+          break;
+        case "pdf":
+          await ExportUtils.exportToPDF(
+            content,
+            title,
+            previewRef.current || undefined
+          );
+          break;
+        case "docx":
+          await ExportUtils.exportToDOCX(content, title);
+          break;
       }
     } catch (error) {
-      console.error(`Error exporting to ${format}:`, error)
-      alert(`Error exporting to ${format.toUpperCase()}. Please try again.`)
+      console.error(`Error exporting to ${format}:`, error);
+      alert(`Error exporting to ${format.toUpperCase()}. Please try again.`);
     }
-  }
+  };
 
   if (isLoading) {
     return (
       <div className="h-screen flex items-center justify-center">
         <div className="text-lg">Loading...</div>
       </div>
-    )
+    );
   }
 
   return (
@@ -167,16 +172,32 @@ export function MarkdownApp() {
           <Button variant="outline" size="sm" onClick={handleSave}>
             Save
           </Button>
-          <Button variant="outline" size="sm" onClick={() => handleExport('md')}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleExport("md")}
+          >
             Export MD
           </Button>
-          <Button variant="outline" size="sm" onClick={() => handleExport('html')}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleExport("html")}
+          >
             Export HTML
           </Button>
-          <Button variant="outline" size="sm" onClick={() => handleExport('pdf')}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleExport("pdf")}
+          >
             Export PDF
           </Button>
-          <Button variant="outline" size="sm" onClick={() => handleExport('docx')}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleExport("docx")}
+          >
             Export DOCX
           </Button>
           <ThemeToggle />
@@ -210,5 +231,5 @@ export function MarkdownApp() {
         </div>
       </div>
     </div>
-  )
+  );
 }
