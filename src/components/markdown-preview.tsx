@@ -428,52 +428,68 @@ export function MarkdownPreview({
 
   // Handle theme changes for existing Mermaid diagrams
   useEffect(() => {
-    if (actualRef.current) {
+    if (actualRef.current && processedContent.codeBlocks.length > 0) {
       const mermaidContainers =
         actualRef.current.querySelectorAll(".mermaid-container");
       if (mermaidContainers.length > 0) {
-        // Re-render only Mermaid diagrams when theme changes
-        const renderDiagrams = async () => {
-          for (const container of mermaidContainers) {
-            const placeholder = container.closest("[data-block-id]");
-            if (placeholder) {
-              const blockId = placeholder.getAttribute("data-block-id");
-              const block = processedContent.codeBlocks.find(
-                (b) => b.id === blockId
-              );
+        // Add a small delay to ensure diagrams are rendered first
+        const timeoutId = setTimeout(() => {
+          // Re-render only Mermaid diagrams when theme changes
+          const renderDiagrams = async () => {
+            for (const container of mermaidContainers) {
+              const placeholder = container.closest("[data-block-id]");
+              if (placeholder) {
+                const blockId = placeholder.getAttribute("data-block-id");
+                const block = processedContent.codeBlocks.find(
+                  (b) => b.id === blockId
+                );
 
-              if (block && block.isMermaid) {
-                try {
-                  // Clear the container but keep the structure
-                  const svgContainer = container.querySelector("div");
-                  if (svgContainer) {
-                    const diagramId = `mermaid-${blockId}-${Date.now()}`;
-                    const processedCode = block.code
-                      .replace(/\r\n/g, "\n")
-                      .replace(/\r/g, "\n")
-                      .replace(/<div[^>]*>/g, "")
-                      .replace(/<\/div>/g, "")
-                      .replace(/<span[^>]*>/g, "")
-                      .replace(/<\/span>/g, "");
+                if (block && block.isMermaid) {
+                  try {
+                    // Find the SVG container and preserve zoom state
+                    const svgContainer = container.querySelector(".svg-container") as HTMLElement;
+                    if (svgContainer) {
+                      // Get current zoom level
+                      const zoomId = `mermaid-${blockId}`;
+                      const currentZoom = zoomLevels[zoomId] || 1;
+                      
+                      const diagramId = `mermaid-${blockId}-${Date.now()}`;
+                      const processedCode = block.code
+                        .replace(/\r\n/g, "\n")
+                        .replace(/\r/g, "\n")
+                        .replace(/<div[^>]*>/g, "")
+                        .replace(/<\/div>/g, "")
+                        .replace(/<span[^>]*>/g, "")
+                        .replace(/<\/span>/g, "");
 
-                    const { svg } = await mermaid.render(
-                      diagramId,
-                      processedCode
-                    );
-                    svgContainer.innerHTML = svg;
+                      const { svg } = await mermaid.render(
+                        diagramId,
+                        processedCode
+                      );
+                      
+                      // Update SVG content while preserving zoom
+                      svgContainer.innerHTML = svg;
+                      
+                      // Re-apply zoom transform
+                      svgContainer.style.transform = `scale(${currentZoom})`;
+                      svgContainer.style.transformOrigin = "top left";
+                      svgContainer.style.transition = "transform 0.2s ease-in-out";
+                    }
+                  } catch (error) {
+                    console.error("Error updating mermaid diagram theme:", error);
                   }
-                } catch (error) {
-                  console.error("Error updating mermaid diagram theme:", error);
                 }
               }
             }
-          }
-        };
+          };
 
-        renderDiagrams();
+          renderDiagrams();
+        }, 100); // Small delay to ensure diagrams are rendered
+
+        return () => clearTimeout(timeoutId);
       }
     }
-  }, [theme, actualRef, processedContent.codeBlocks]);
+  }, [theme, actualRef, zoomLevels, processedContent.codeBlocks]);
 
   return (
     <div className={`flex flex-col h-full ${className}`}>
