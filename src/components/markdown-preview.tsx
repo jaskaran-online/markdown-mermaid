@@ -76,23 +76,8 @@ export function MarkdownPreview({
       }[] = [];
       let blockCounter = 0;
 
-      // First, handle regular code blocks (excluding mermaid)
+      // First, handle Mermaid blocks specifically - more robust regex
       let processedContent = cleanedContent.replace(
-        /```(?!mermaid)(\w+)?\s*\n([\s\S]*?)\n```/g,
-        (_, language, code) => {
-          const blockId = `block-${blockCounter++}`;
-          codeBlocks.push({
-            id: blockId,
-            language: language || "text",
-            code: code.trim(),
-            isMermaid: false,
-          });
-          return `<div class="code-block-placeholder" data-block-id="${blockId}"></div>`;
-        }
-      );
-
-      // Then handle Mermaid blocks specifically - more robust regex
-      processedContent = processedContent.replace(
         /```mermaid\s*\n([\s\S]*?)\n```/g,
         (match, diagramCode) => {
           const blockId = `block-${blockCounter++}`;
@@ -144,6 +129,21 @@ export function MarkdownPreview({
             });
             return `<div class="code-block-placeholder" data-block-id="${blockId}"></div>`;
           }
+        }
+      );
+
+      // Then handle regular code blocks (excluding mermaid)
+      processedContent = processedContent.replace(
+        /```(?!mermaid)(\w+)?\s*\n([\s\S]*?)\n```/g,
+        (_, language, code) => {
+          const blockId = `block-${blockCounter++}`;
+          codeBlocks.push({
+            id: blockId,
+            language: language || "text",
+            code: code.trim(),
+            isMermaid: false,
+          });
+          return `<div class="code-block-placeholder" data-block-id="${blockId}"></div>`;
         }
       );
 
@@ -203,6 +203,10 @@ export function MarkdownPreview({
   // Render Mermaid diagrams after content is updated
   useEffect(() => {
     if (actualRef.current && processedContent.codeBlocks.length > 0) {
+      // Clear any existing mermaid diagrams first
+      const existingMermaidElements = actualRef.current.querySelectorAll('.mermaid');
+      existingMermaidElements.forEach(el => el.remove());
+
       processedContent.codeBlocks.forEach(async (block) => {
         if (block.isMermaid) {
           const placeholder = actualRef.current?.querySelector(
@@ -210,7 +214,16 @@ export function MarkdownPreview({
           );
           if (placeholder) {
             try {
-              const { svg } = await mermaid.render(block.id, block.code);
+              // Clear the placeholder first
+              placeholder.innerHTML = '';
+              
+              // Create a unique ID for this diagram
+              const diagramId = `mermaid-${block.id}-${Date.now()}`;
+              
+              console.log('Rendering mermaid diagram:', diagramId);
+              console.log('Mermaid code:', block.code);
+              
+              const { svg } = await mermaid.render(diagramId, block.code);
               placeholder.innerHTML = svg;
             } catch (error) {
               console.error("Error rendering mermaid diagram:", error);
