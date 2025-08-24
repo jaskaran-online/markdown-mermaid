@@ -319,4 +319,62 @@
   .markdown-content a:hover {
     color: hsl(var(--primary) / 0.8);
   }
+
+  /* Large preview specific styles */
+  .prose-lg {
+    font-size: 1.125rem;
+    line-height: 1.75;
+  }
+
+  .prose-lg h1 {
+    font-size: 2.5rem;
+    margin-top: 2.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .prose-lg h2 {
+    font-size: 2rem;
+    margin-top: 2rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .prose-lg h3 {
+    font-size: 1.5rem;
+    margin-top: 1.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .prose-lg p {
+    margin-bottom: 1.5rem;
+  }
+
+  .prose-lg ul,
+  .prose-lg ol {
+    margin-bottom: 1.5rem;
+    padding-left: 2rem;
+  }
+
+  .prose-lg li {
+    margin-bottom: 0.5rem;
+  }
+
+  .prose-lg blockquote {
+    margin: 2rem 0;
+    padding: 1.5rem 2rem;
+  }
+
+  .prose-lg pre {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    font-size: 1rem;
+  }
+
+  .prose-lg table {
+    margin: 2rem 0;
+  }
+
+  .prose-lg th,
+  .prose-lg td {
+    padding: 1rem;
+  }
 }
