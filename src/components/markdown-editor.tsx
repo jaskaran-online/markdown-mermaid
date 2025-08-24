@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import Editor, { Monaco } from "@monaco-editor/react";
 import type { editor as MonacoEditor } from "monaco-editor";
 import { Button } from "@/components/ui/button";
+import { useTheme } from "@/contexts/theme-context";
 
 interface MarkdownEditorProps {
   value: string;
@@ -17,6 +18,7 @@ export function MarkdownEditor({
   className,
 }: MarkdownEditorProps) {
   const editorRef = useRef<MonacoEditor.IStandaloneCodeEditor | null>(null);
+  const { theme } = useTheme();
 
   const handleEditorDidMount = (
     editor: MonacoEditor.IStandaloneCodeEditor,
@@ -57,12 +59,20 @@ export function MarkdownEditor({
     const isDark = document.documentElement.classList.contains("dark");
     monaco.editor.setTheme(isDark ? "vs-dark" : "vs");
     console.log("Editor theme set to:", isDark ? "vs-dark" : "vs");
-
-    // Preserve cursor position and selection
-    editor.onDidChangeCursorPosition(() => {
-      // This helps maintain cursor position during updates
-    });
   };
+
+  // Update editor theme when theme changes
+  useEffect(() => {
+    if (editorRef.current) {
+      const isDark =
+        theme === "dark" ||
+        (theme === "system" &&
+          window.matchMedia("(prefers-color-scheme: dark)").matches);
+      const monacoTheme = isDark ? "vs-dark" : "vs";
+      editorRef.current.updateOptions({ theme: monacoTheme });
+      console.log("Editor theme updated to:", monacoTheme);
+    }
+  }, [theme]);
 
   const handleEditorChange = (value: string | undefined) => {
     onChange(value || "");

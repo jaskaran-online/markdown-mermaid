@@ -27,24 +27,24 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --background: 0 0% 19%; /* #303030 - Background */
+    --foreground: 0 0% 98%; /* Light text for dark background */
+    --card: 0 0% 26%; /* #424242 - Cards/Dialogs */
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 26%; /* #424242 - Cards/Dialogs */
+    --popover-foreground: 0 0% 98%;
     --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 84% 4.9%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --primary-foreground: 0 0% 13%; /* #212121 - App bar color for primary text */
+    --secondary: 0 0% 13%; /* #212121 - App bar */
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 13%; /* #212121 - App bar */
+    --muted-foreground: 0 0% 65%; /* Lighter muted text */
+    --accent: 0 0% 13%; /* #212121 - App bar */
+    --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 13%; /* #212121 - App bar */
+    --input: 0 0% 13%; /* #212121 - App bar */
     --ring: 224.3 76.3% 94.1%;
   }
 }
@@ -65,6 +65,47 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    background-color: hsl(var(--card)) !important;
+    border-color: hsl(var(--border)) !important;
+  }
+
+  /* Dark theme specific improvements */
+  .dark .mermaid {
+    background-color: hsl(var(--card)) !important;
+    border-color: hsl(var(--border)) !important;
+  }
+
+  /* Ensure proper contrast for code blocks in dark mode */
+  .dark .markdown-content pre {
+    background-color: hsl(var(--muted)) !important;
+    border: 1px solid hsl(var(--border)) !important;
+  }
+
+  .dark .markdown-content code {
+    background-color: hsl(var(--muted)) !important;
+    color: hsl(var(--foreground)) !important;
+  }
+
+  /* Improve table styling in dark mode */
+  .dark .markdown-content table {
+    border-color: hsl(var(--border)) !important;
+  }
+
+  .dark .markdown-content th {
+    background-color: hsl(var(--muted)) !important;
+    color: hsl(var(--foreground)) !important;
+  }
+
+  .dark .markdown-content td {
+    border-color: hsl(var(--border)) !important;
+  }
+
+  .dark .markdown-content tr:nth-child(even) {
+    background-color: hsl(var(--muted) / 0.2) !important;
+  }
+
+  .dark .markdown-content tr:hover {
+    background-color: hsl(var(--muted) / 0.4) !important;
   }
 
   .mermaid svg {
@@ -180,7 +221,7 @@
     background: hsl(var(--muted));
     padding: 0.125rem 0.25rem;
     border-radius: 0.25rem;
-    font-family: 'Monaco', 'Menlo', monospace;
+    font-family: "Monaco", "Menlo", monospace;
     font-size: 0.875rem;
   }
 
@@ -222,7 +263,12 @@
   .markdown-content hr {
     border: none;
     height: 2px;
-    background: linear-gradient(to right, hsl(var(--border)), hsl(var(--primary)), hsl(var(--border)));
+    background: linear-gradient(
+      to right,
+      hsl(var(--border)),
+      hsl(var(--primary)),
+      hsl(var(--border))
+    );
     margin: 2rem 0;
   }
 
