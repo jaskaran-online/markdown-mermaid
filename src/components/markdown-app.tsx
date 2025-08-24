@@ -9,7 +9,7 @@ import { ExportUtils } from "@/lib/export-utils";
 import { ThemeToggle } from "./theme-toggle";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/contexts/theme-context";
-import { Maximize2, Columns, PanelLeftClose, PanelRightClose, Layout } from "lucide-react";
+import { Maximize2, Columns, PanelLeftClose, PanelRightClose, Layout, GripVertical } from "lucide-react";
 
 // Sample content - fallback if markdown import fails
 const SAMPLE_CONTENT = `# SEO-Friendly Blog System - Mermaid Diagrams Collection
@@ -594,6 +594,13 @@ export function MarkdownApp() {
   });
   const [dragging, setDragging] = useState(false);
   const [previewRefreshKey, setPreviewRefreshKey] = useState(0);
+  const dragRefreshTimeout = useRef<number | null>(null);
+  const schedulePreviewRefresh = useCallback(() => {
+    if (dragRefreshTimeout.current) window.clearTimeout(dragRefreshTimeout.current);
+    dragRefreshTimeout.current = window.setTimeout(() => {
+      setPreviewRefreshKey((k) => k + 1);
+    }, 150);
+  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -620,6 +627,8 @@ export function MarkdownApp() {
       const rect = containerRef.current.getBoundingClientRect();
       const next = (e.clientX - rect.left) / rect.width;
       setSplit(Math.min(0.85, Math.max(0.15, next)));
+      // Debounced refresh while dragging so diagrams track size
+      schedulePreviewRefresh();
     };
     const onUp = () => {
       setDragging(false);
@@ -631,6 +640,7 @@ export function MarkdownApp() {
     return () => {
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
+      if (dragRefreshTimeout.current) window.clearTimeout(dragRefreshTimeout.current);
     };
   }, [dragging]);
 
@@ -856,8 +866,11 @@ export function MarkdownApp() {
             aria-orientation="vertical"
             aria-label="Resize editor and preview"
             onMouseDown={onHandleMouseDown}
-            className={`w-1.5 cursor-col-resize bg-border hover:bg-foreground/20 ${dragging ? "bg-foreground/30" : ""}`}
-          />
+            className={`group relative w-1.5 cursor-col-resize bg-border hover:bg-foreground/20 transition-all ${dragging ? "bg-foreground/30 w-2" : ""}`}
+            title="Drag to resize"
+          >
+            <GripVertical className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-80" />
+          </div>
         )}
         <div
           className="h-full overflow-hidden"
