@@ -284,7 +284,8 @@ export function MermaidDownloadModal({
         </div>
 
         {/* Quality Control */}
-        {(downloadOptions.format === "png" || downloadOptions.format === "jpg") && (
+        {(downloadOptions.format === "png" ||
+          downloadOptions.format === "jpg") && (
           <div>
             <h3 className="text-sm font-medium mb-3">Quality</h3>
             <div className="space-y-2">

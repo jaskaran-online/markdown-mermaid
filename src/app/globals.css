@@ -409,4 +409,23 @@
     cursor: pointer;
     border: none;
   }
+
+  /* Mermaid zoom controls styling */
+  .mermaid-container {
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+    border: 1px solid hsl(var(--border));
+  }
+
+  .mermaid-container .mermaid-container {
+    overflow: auto;
+    max-height: 600px;
+  }
+
+  .mermaid-container svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
 }

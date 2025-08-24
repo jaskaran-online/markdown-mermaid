@@ -15,7 +15,7 @@ import { useTheme } from "@/contexts/theme-context";
 import { Modal } from "@/components/ui/modal";
 import { LargePreview } from "@/components/large-preview";
 import { MermaidDownloadModal } from "@/components/mermaid-download-modal";
-import { Maximize2, Download } from "lucide-react";
+import { Maximize2, Download, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 
 interface MarkdownPreviewProps {
   content: string;
@@ -41,6 +41,9 @@ export function MarkdownPreview({
     mermaidCode: "",
     diagramTitle: "",
   });
+
+  // Zoom state for Mermaid diagrams
+  const [zoomLevels, setZoomLevels] = useState<{ [key: string]: number }>({});
 
   // Initialize and update Mermaid theme
   useEffect(() => {
@@ -275,11 +278,94 @@ export function MarkdownPreview({
               // Create container for diagram and download button
               const container = document.createElement("div");
               container.className = "relative group mermaid-container";
+              container.style.position = "relative";
+              container.style.overflow = "hidden";
+              container.style.borderRadius = "8px";
+              container.style.border = "1px solid hsl(var(--border))";
 
               // Add the SVG
               const svgContainer = document.createElement("div");
               svgContainer.innerHTML = svg;
+              svgContainer.style.position = "relative";
+              svgContainer.style.overflow = "auto";
+              svgContainer.style.maxHeight = "600px";
               container.appendChild(svgContainer);
+
+              // Create zoom controls container
+              const zoomControls = document.createElement("div");
+              zoomControls.className =
+                "absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-background/80 backdrop-blur-sm border border-border rounded-md p-1 flex gap-1";
+              zoomControls.style.zIndex = "10";
+
+              // Zoom in button
+              const zoomInButton = document.createElement("button");
+              zoomInButton.className =
+                "p-1 hover:bg-muted rounded transition-colors";
+              zoomInButton.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"/>
+                  <path d="m21 21-4.35-4.35"/>
+                  <path d="M11 8v6"/>
+                  <path d="M8 11h6"/>
+                </svg>
+              `;
+              zoomInButton.title = "Zoom In";
+
+              // Zoom out button
+              const zoomOutButton = document.createElement("button");
+              zoomOutButton.className =
+                "p-1 hover:bg-muted rounded transition-colors";
+              zoomOutButton.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"/>
+                  <path d="m21 21-4.35-4.35"/>
+                  <path d="M8 11h6"/>
+                </svg>
+              `;
+              zoomOutButton.title = "Zoom Out";
+
+              // Reset zoom button
+              const resetZoomButton = document.createElement("button");
+              resetZoomButton.className =
+                "p-1 hover:bg-muted rounded transition-colors";
+              resetZoomButton.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                  <path d="M21 3v5h-5"/>
+                  <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                  <path d="M3 21v-5h5"/>
+                </svg>
+              `;
+              resetZoomButton.title = "Reset Zoom";
+
+              // Add zoom functionality
+              const zoomId = `mermaid-${block.id}`;
+              const currentZoom = zoomLevels[zoomId] || 1;
+
+              const updateZoom = (newZoom: number) => {
+                const clampedZoom = Math.max(0.5, Math.min(3, newZoom));
+                setZoomLevels((prev) => ({
+                  ...prev,
+                  [zoomId]: clampedZoom,
+                }));
+
+                // Apply zoom transform to SVG container
+                svgContainer.style.transform = `scale(${clampedZoom})`;
+                svgContainer.style.transformOrigin = "top left";
+                svgContainer.style.transition = "transform 0.2s ease-in-out";
+              };
+
+              zoomInButton.onclick = () => updateZoom(currentZoom + 0.25);
+              zoomOutButton.onclick = () => updateZoom(currentZoom - 0.25);
+              resetZoomButton.onclick = () => updateZoom(1);
+
+              // Apply current zoom level
+              updateZoom(currentZoom);
+
+              // Add buttons to zoom controls
+              zoomControls.appendChild(zoomInButton);
+              zoomControls.appendChild(zoomOutButton);
+              zoomControls.appendChild(resetZoomButton);
 
               // Add download button overlay
               const downloadButton = document.createElement("button");
@@ -303,6 +389,7 @@ export function MarkdownPreview({
                 });
               });
 
+              container.appendChild(zoomControls);
               container.appendChild(downloadButton);
               placeholder.appendChild(container);
             } catch (error) {
