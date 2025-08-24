@@ -5,6 +5,7 @@ import { remark } from "remark";
 import remarkGfm from "remark-gfm";
 import remarkHtml from "remark-html";
 import mermaid from "mermaid";
+import { attachMermaidZoom } from "@/lib/mermaid-zoom";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import {
   oneDark,
@@ -240,6 +241,9 @@ export function LargePreview({ content, className }: LargePreviewProps) {
                 const svgContainer = document.createElement("div");
                 svgContainer.innerHTML = svg;
                 container.appendChild(svgContainer);
+
+                // Enable per-diagram zoom with mouse wheel
+                attachMermaidZoom(placeholder as HTMLElement, container, svgContainer);
 
                 // Add download button overlay
                 const downloadButton = document.createElement("button");

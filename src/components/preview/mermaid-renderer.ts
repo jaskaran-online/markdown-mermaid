@@ -2,6 +2,7 @@
 
 import mermaid from "mermaid";
 import type { CodeBlock } from "@/lib/markdown/types";
+import { attachMermaidZoom } from "@/lib/mermaid-zoom";
 
 let renderSeq = 0;
 function nextToken() {
@@ -51,6 +52,9 @@ export async function renderMermaidBlocks(
       const svgContainer = document.createElement("div");
       svgContainer.innerHTML = svg;
       wrapper.appendChild(svgContainer);
+
+      // Apply persisted zoom from placeholder and attach zoom handlers
+      attachMermaidZoom(placeholder as HTMLElement, wrapper, svgContainer);
 
       const downloadButton = document.createElement("button");
       downloadButton.className =
