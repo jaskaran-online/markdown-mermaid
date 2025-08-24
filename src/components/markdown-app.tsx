@@ -9,6 +9,7 @@ import { ExportUtils } from "@/lib/export-utils";
 import { ThemeToggle } from "./theme-toggle";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/contexts/theme-context";
+import { Maximize2, Columns, PanelLeftClose, PanelRightClose, Layout, GripVertical } from "lucide-react";
 
 // Sample content - fallback if markdown import fails
 const SAMPLE_CONTENT = `# SEO-Friendly Blog System - Mermaid Diagrams Collection
@@ -578,6 +579,83 @@ export function MarkdownApp() {
   const [content, setContent] = useState(DEFAULT_CONTENT);
   const [urlInput, setUrlInput] = useState("");
   const previewRef = useRef<HTMLDivElement>(null);
+  // Split + expand state
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [split, setSplit] = useState<number>(() => {
+    if (typeof window === "undefined") return 0.5;
+    const raw = localStorage.getItem("markdown-mermaid-split");
+    const v = raw ? parseFloat(raw) : 0.5;
+    return isNaN(v) ? 0.5 : Math.min(0.85, Math.max(0.15, v));
+  });
+  const [expanded, setExpanded] = useState<"none" | "editor" | "preview">(() => {
+    if (typeof window === "undefined") return "none";
+    const raw = localStorage.getItem("markdown-mermaid-expanded");
+    return raw === "editor" || raw === "preview" ? (raw as any) : "none";
+  });
+  const [dragging, setDragging] = useState(false);
+  const [previewRefreshKey, setPreviewRefreshKey] = useState(0);
+  const dragRefreshTimeout = useRef<number | null>(null);
+  const schedulePreviewRefresh = useCallback(() => {
+    if (dragRefreshTimeout.current) window.clearTimeout(dragRefreshTimeout.current);
+    dragRefreshTimeout.current = window.setTimeout(() => {
+      setPreviewRefreshKey((k) => k + 1);
+    }, 150);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("markdown-mermaid-split", String(split));
+    }
+  }, [split]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("markdown-mermaid-expanded", expanded);
+    }
+  }, [expanded]);
+
+  const onHandleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setExpanded("none");
+    setDragging(true);
+  };
+
+  useEffect(() => {
+    if (!dragging) return;
+    const onMove = (e: MouseEvent) => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const next = (e.clientX - rect.left) / rect.width;
+      setSplit(Math.min(0.85, Math.max(0.15, next)));
+      // Debounced refresh while dragging so diagrams track size
+      schedulePreviewRefresh();
+    };
+    const onUp = () => {
+      setDragging(false);
+      // Trigger a refresh after resizing completes
+      setPreviewRefreshKey((k) => k + 1);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      if (dragRefreshTimeout.current) window.clearTimeout(dragRefreshTimeout.current);
+    };
+  }, [dragging]);
+
+  const expandEditor = () => setExpanded(expanded === "editor" ? "none" : "editor");
+  const expandPreview = () => setExpanded(expanded === "preview" ? "none" : "preview");
+  const resetSplit = () => {
+    setExpanded("none");
+    setSplit(0.5);
+    setPreviewRefreshKey((k) => k + 1);
+  };
+
+  // Refresh preview when expanded target changes
+  useEffect(() => {
+    setPreviewRefreshKey((k) => k + 1);
+  }, [expanded]);
 
   // Load current document on mount
   useEffect(() => {
@@ -747,6 +825,16 @@ export function MarkdownApp() {
           >
             Export DOCX
           </Button>
+          <div className="mx-2 h-6 w-px bg-border" />
+          <Button variant="outline" size="sm" onClick={expandEditor} title="Expand editor">
+            <PanelRightClose className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={expandPreview} title="Expand preview">
+            <PanelLeftClose className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={resetSplit} title="Reset split">
+            <Columns className="h-4 w-4" />
+          </Button>
           <ThemeToggle />
         </div>
       </div>
@@ -761,19 +849,38 @@ export function MarkdownApp() {
       />
 
       {/* Main content */}
-      <div className="flex-1 flex">
-        <div className="flex-1 border-r">
+      <div className="flex-1 flex overflow-hidden" ref={containerRef}>
+        <div
+          className="h-full border-r overflow-hidden"
+          style={{ width: expanded === "preview" ? 0 : expanded === "editor" ? "100%" : `${Math.round(split * 100)}%` }}
+        >
           <MarkdownEditor
             value={content}
             onChange={handleContentChange}
             className="h-full"
           />
         </div>
-        <div className="flex-1">
+        {expanded === "none" && (
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize editor and preview"
+            onMouseDown={onHandleMouseDown}
+            className={`group relative w-1.5 cursor-col-resize bg-border hover:bg-foreground/20 transition-all ${dragging ? "bg-foreground/30 w-2" : ""}`}
+            title="Drag to resize"
+          >
+            <GripVertical className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-80" />
+          </div>
+        )}
+        <div
+          className="h-full overflow-hidden"
+          style={{ width: expanded === "editor" ? 0 : expanded === "preview" ? "100%" : `${Math.round((1 - split) * 100)}%` }}
+        >
           <MarkdownPreview
             content={content}
             className="h-full"
             previewRef={previewRef}
+            refreshKey={previewRefreshKey}
           />
         </div>
       </div>
