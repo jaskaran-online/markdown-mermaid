@@ -231,7 +231,40 @@ export function LargePreview({ content, className }: LargePreviewProps) {
                   .replace(/<\/span>/g, "");
 
                 const { svg } = await mermaid.render(diagramId, processedCode);
-                placeholder.innerHTML = svg;
+
+                // Create container for diagram and download button
+                const container = document.createElement("div");
+                container.className = "relative group mermaid-container";
+
+                // Add the SVG
+                const svgContainer = document.createElement("div");
+                svgContainer.innerHTML = svg;
+                container.appendChild(svgContainer);
+
+                // Add download button overlay
+                const downloadButton = document.createElement("button");
+                downloadButton.className =
+                  "absolute top-2 right-2 bg-background/80 backdrop-blur-sm border border-border rounded-md p-2 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background/90";
+                downloadButton.innerHTML = `
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                `;
+                downloadButton.title = "Download diagram";
+
+                // Add click handler for download
+                downloadButton.addEventListener("click", (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setDownloadModalState({
+                    isOpen: true,
+                    mermaidCode: block.code,
+                    diagramTitle: `Diagram ${block.id}`,
+                  });
+                });
+
+                container.appendChild(downloadButton);
+                placeholder.appendChild(container);
               } catch (error) {
                 console.error("Error rendering mermaid diagram:", error);
                 placeholder.innerHTML = `
@@ -277,6 +310,14 @@ export function LargePreview({ content, className }: LargePreviewProps) {
         ref={previewRef}
         className="markdown-content prose prose-lg max-w-none dark:prose-invert"
         dangerouslySetInnerHTML={{ __html: processedContent.html }}
+      />
+
+      {/* Mermaid Download Modal */}
+      <MermaidDownloadModal
+        isOpen={downloadModalState.isOpen}
+        onClose={() => setDownloadModalState({ ...downloadModalState, isOpen: false })}
+        mermaidCode={downloadModalState.mermaidCode}
+        diagramTitle={downloadModalState.diagramTitle}
       />
     </div>
   );
