@@ -1,5 +1,8 @@
+"use client"
+
 import { useRef } from 'react'
 import Editor, { Monaco } from '@monaco-editor/react'
+import type { editor as MonacoEditor } from 'monaco-editor'
 import { Button } from '@/components/ui/button'
 
 interface MarkdownEditorProps {
@@ -9,9 +12,12 @@ interface MarkdownEditorProps {
 }
 
 export function MarkdownEditor({ value, onChange, className }: MarkdownEditorProps) {
-  const editorRef = useRef<any>(null)
+  const editorRef = useRef<MonacoEditor.IStandaloneCodeEditor | null>(null)
 
-  const handleEditorDidMount = (editor: any, monaco: Monaco) => {
+  const handleEditorDidMount = (
+    editor: MonacoEditor.IStandaloneCodeEditor,
+    monaco: Monaco
+  ) => {
     editorRef.current = editor
 
     // Configure Monaco for Markdown

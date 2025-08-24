@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { MarkdownEditor } from './markdown-editor'
 import { MarkdownPreview } from './markdown-preview'
@@ -18,13 +20,41 @@ This is a **live preview** editor with *Mermaid diagram* support.
 - Markdown syntax highlighting
 - Export capabilities
 
-## Example Mermaid Diagram
+## Example Mermaid Diagrams
 
+### Flowchart
 \`\`\`mermaid
 graph TD
     A[Start] --> B[Edit Markdown]
     B --> C[See Preview]
     C --> D[Export Document]
+\`\`\`
+
+### Sequence Diagram
+\`\`\`mermaid
+sequenceDiagram
+    participant User
+    participant Editor
+    participant Preview
+
+    User->>Editor: Type Markdown
+    Editor->>Preview: Update Live Preview
+    Preview->>User: Show Rendered Content
+\`\`\`
+
+### Class Diagram
+\`\`\`mermaid
+classDiagram
+    class MarkdownEditor {
+        +content: string
+        +onChange()
+        +render()
+    }
+    class MarkdownPreview {
+        +content: string
+        +render()
+    }
+    MarkdownEditor --> MarkdownPreview : updates
 \`\`\`
 
 ## More Content

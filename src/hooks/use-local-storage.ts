@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useEffect, useCallback } from 'react'
 
 interface Document {
@@ -29,6 +31,11 @@ export function useLocalStorage() {
 
   // Load data from localStorage on mount
   useEffect(() => {
+    if (typeof window === 'undefined') {
+      setIsLoading(false)
+      return
+    }
+
     try {
       const storedDocuments = localStorage.getItem(DOCUMENTS_KEY)
       const storedRecentFiles = localStorage.getItem(RECENT_FILES_KEY)
@@ -54,6 +61,8 @@ export function useLocalStorage() {
 
   // Save documents to localStorage
   const saveDocuments = useCallback((docs: Document[]) => {
+    if (typeof window === 'undefined') return
+
     try {
       localStorage.setItem(DOCUMENTS_KEY, JSON.stringify(docs))
       setDocuments(docs)
@@ -64,6 +73,8 @@ export function useLocalStorage() {
 
   // Save recent files to localStorage
   const saveRecentFiles = useCallback((files: RecentFile[]) => {
+    if (typeof window === 'undefined') return
+
     try {
       localStorage.setItem(RECENT_FILES_KEY, JSON.stringify(files))
       setRecentFiles(files)
@@ -74,6 +85,8 @@ export function useLocalStorage() {
 
   // Save current document to localStorage
   const saveCurrentDocument = useCallback((doc: Document | null) => {
+    if (typeof window === 'undefined') return
+
     try {
       if (doc) {
         localStorage.setItem(CURRENT_DOCUMENT_KEY, JSON.stringify(doc.id))
@@ -146,7 +159,9 @@ export function useLocalStorage() {
   // Switch to a document
   const switchDocument = useCallback((id: string) => {
     setCurrentDocumentId(id)
-    localStorage.setItem(CURRENT_DOCUMENT_KEY, JSON.stringify(id))
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(CURRENT_DOCUMENT_KEY, JSON.stringify(id))
+    }
   }, [])
 
   // Close a document

@@ -1,3 +1,5 @@
+"use client"
+
 import { useMemo, useEffect, useRef } from 'react'
 import { remark } from 'remark'
 import remarkGfm from 'remark-gfm'
@@ -29,10 +31,19 @@ export function MarkdownPreview({ content, className, previewRef }: MarkdownPrev
 
   const renderedContent = useMemo(() => {
     try {
+      // First, preprocess the content to identify Mermaid blocks
+      const processedContent = content.replace(
+        /```mermaid\s*\n([\s\S]*?)\n```/g,
+        (_, diagramCode) => {
+          const diagramId = `mermaid-${Math.random().toString(36).substring(2, 11)}`
+          return `<div class="mermaid" data-mermaid-id="${diagramId}">${diagramCode.trim()}</div>`
+        }
+      )
+
       const processed = remark()
         .use(remarkGfm)
         .use(remarkHtml, { sanitize: false })
-        .processSync(content)
+        .processSync(processedContent)
       return processed.toString()
     } catch (error) {
       console.error('Error processing markdown:', error)
@@ -45,18 +56,22 @@ export function MarkdownPreview({ content, className, previewRef }: MarkdownPrev
     if (actualRef.current) {
       const mermaidElements = actualRef.current.querySelectorAll('.mermaid')
       mermaidElements.forEach(async (element) => {
+        const diagramId = element.getAttribute('data-mermaid-id') || `mermaid-${Math.random().toString(36).substring(2, 11)}`
+        const diagramCode = element.textContent || ''
+
         try {
-          const { svg } = await mermaid.render(`mermaid-${Math.random()}`, element.textContent || '')
+          const { svg } = await mermaid.render(diagramId, diagramCode)
           element.innerHTML = svg
         } catch (error) {
           console.error('Error rendering mermaid diagram:', error)
-          element.innerHTML = `<div class="text-red-500 p-2 border border-red-300 rounded">
+          element.innerHTML = `<div class="text-red-500 p-2 border border-red-300 rounded bg-red-50 dark:bg-red-900/20">
             <strong>Mermaid Error:</strong> ${error instanceof Error ? error.message : 'Unknown error'}
+            <pre class="mt-2 text-xs bg-gray-100 dark:bg-gray-800 p-2 rounded overflow-auto">${diagramCode}</pre>
           </div>`
         }
       })
     }
-  }, [renderedContent])
+  }, [renderedContent, actualRef])
 
   return (
     <div className={`flex flex-col h-full ${className}`}>
