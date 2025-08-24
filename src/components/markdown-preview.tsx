@@ -1,4 +1,8 @@
-import { useMemo } from 'react'
+import { useMemo, useEffect, useRef } from 'react'
+import { remark } from 'remark'
+import remarkGfm from 'remark-gfm'
+import remarkHtml from 'remark-html'
+import mermaid from 'mermaid'
 import { Button } from '@/components/ui/button'
 
 interface MarkdownPreviewProps {
@@ -7,17 +11,47 @@ interface MarkdownPreviewProps {
 }
 
 export function MarkdownPreview({ content, className }: MarkdownPreviewProps) {
+  const previewRef = useRef<HTMLDivElement>(null)
+
+  // Initialize Mermaid
+  useEffect(() => {
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'default',
+      securityLevel: 'loose',
+    })
+  }, [])
+
   const renderedContent = useMemo(() => {
-    // Simple markdown rendering - in a real app, you'd use a library like remark
-    return content
-      .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-      .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-      .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-      .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
-      .replace(/\*(.*)\*/gim, '<em>$1</em>')
-      .replace(/`([^`]+)`/gim, '<code>$1</code>')
-      .replace(/\n/gim, '<br>')
+    try {
+      const processed = remark()
+        .use(remarkGfm)
+        .use(remarkHtml, { sanitize: false })
+        .processSync(content)
+      return processed.toString()
+    } catch (error) {
+      console.error('Error processing markdown:', error)
+      return '<p>Error rendering markdown</p>'
+    }
   }, [content])
+
+  // Render Mermaid diagrams after content is updated
+  useEffect(() => {
+    if (previewRef.current) {
+      const mermaidElements = previewRef.current.querySelectorAll('.mermaid')
+      mermaidElements.forEach(async (element) => {
+        try {
+          const { svg } = await mermaid.render(`mermaid-${Math.random()}`, element.textContent || '')
+          element.innerHTML = svg
+        } catch (error) {
+          console.error('Error rendering mermaid diagram:', error)
+          element.innerHTML = `<div class="text-red-500 p-2 border border-red-300 rounded">
+            <strong>Mermaid Error:</strong> ${error instanceof Error ? error.message : 'Unknown error'}
+          </div>`
+        }
+      })
+    }
+  }, [renderedContent])
 
   return (
     <div className={`flex flex-col h-full ${className}`}>
@@ -31,6 +65,7 @@ export function MarkdownPreview({ content, className }: MarkdownPreviewProps) {
       </div>
       <div className="flex-1 p-4 overflow-auto">
         <div
+          ref={previewRef}
           className="prose prose-sm max-w-none dark:prose-invert"
           dangerouslySetInnerHTML={{ __html: renderedContent }}
         />
