@@ -3,8 +3,20 @@
 import { useState } from "react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
-import { MermaidDownloadUtils, MermaidDownloadOptions } from "@/lib/mermaid-download-utils";
-import { Download, FileImage, FileType, Palette, Sun, Moon, Eye, EyeOff } from "lucide-react";
+import {
+  MermaidDownloadUtils,
+  MermaidDownloadOptions,
+} from "@/lib/mermaid-download-utils";
+import {
+  Download,
+  FileImage,
+  FileType,
+  Palette,
+  Sun,
+  Moon,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 
 interface MermaidDownloadModalProps {
   isOpen: boolean;
@@ -19,20 +31,26 @@ export function MermaidDownloadModal({
   mermaidCode,
   diagramTitle,
 }: MermaidDownloadModalProps) {
-  const [downloadOptions, setDownloadOptions] = useState<MermaidDownloadOptions>({
-    format: "png",
-    theme: "light",
-    transparent: false,
-    width: 800,
-    height: 600,
-  });
+  const [downloadOptions, setDownloadOptions] =
+    useState<MermaidDownloadOptions>({
+      format: "png",
+      theme: "light",
+      transparent: false,
+      width: 800,
+      height: 600,
+    });
   const [isDownloading, setIsDownloading] = useState(false);
 
   const handleDownload = async () => {
     setIsDownloading(true);
     try {
-      const filename = diagramTitle || MermaidDownloadUtils.getDefaultFilename(mermaidCode);
-      await MermaidDownloadUtils.downloadMermaidDiagram(mermaidCode, filename, downloadOptions);
+      const filename =
+        diagramTitle || MermaidDownloadUtils.getDefaultFilename(mermaidCode);
+      await MermaidDownloadUtils.downloadMermaidDiagram(
+        mermaidCode,
+        filename,
+        downloadOptions
+      );
       onClose();
     } catch (error) {
       console.error("Download failed:", error);
@@ -43,9 +61,24 @@ export function MermaidDownloadModal({
   };
 
   const formatOptions = [
-    { value: "png", label: "PNG", icon: FileImage, description: "High quality, supports transparency" },
-    { value: "jpg", label: "JPG", icon: FileImage, description: "Smaller file size, no transparency" },
-    { value: "svg", label: "SVG", icon: FileType, description: "Vector format, scalable" },
+    {
+      value: "png",
+      label: "PNG",
+      icon: FileImage,
+      description: "High quality, supports transparency",
+    },
+    {
+      value: "jpg",
+      label: "JPG",
+      icon: FileImage,
+      description: "Smaller file size, no transparency",
+    },
+    {
+      value: "svg",
+      label: "SVG",
+      icon: FileType,
+      description: "Vector format, scalable",
+    },
   ];
 
   const themeOptions = [
@@ -54,7 +87,12 @@ export function MermaidDownloadModal({
   ];
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Download Mermaid Diagram" size="md">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Download Mermaid Diagram"
+      size="md"
+    >
       <div className="space-y-6">
         {/* Format Selection */}
         <div>
@@ -78,14 +116,19 @@ export function MermaidDownloadModal({
                   value={option.value}
                   checked={downloadOptions.format === option.value}
                   onChange={(e) =>
-                    setDownloadOptions({ ...downloadOptions, format: e.target.value as any })
+                    setDownloadOptions({
+                      ...downloadOptions,
+                      format: e.target.value as any,
+                    })
                   }
                   className="sr-only"
                 />
                 <option.icon className="h-5 w-5 text-muted-foreground" />
                 <div className="flex-1">
                   <div className="font-medium">{option.label}</div>
-                  <div className="text-sm text-muted-foreground">{option.description}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {option.description}
+                  </div>
                 </div>
               </label>
             ))}
@@ -114,7 +157,10 @@ export function MermaidDownloadModal({
                   value={option.value}
                   checked={downloadOptions.theme === option.value}
                   onChange={(e) =>
-                    setDownloadOptions({ ...downloadOptions, theme: e.target.value as any })
+                    setDownloadOptions({
+                      ...downloadOptions,
+                      theme: e.target.value as any,
+                    })
                   }
                   className="sr-only"
                 />
@@ -128,7 +174,11 @@ export function MermaidDownloadModal({
         {/* Background Options */}
         <div>
           <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-            {downloadOptions.transparent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            {downloadOptions.transparent ? (
+              <EyeOff className="h-4 w-4" />
+            ) : (
+              <Eye className="h-4 w-4" />
+            )}
             Background
           </h3>
           <div className="grid grid-cols-2 gap-2">
@@ -143,7 +193,9 @@ export function MermaidDownloadModal({
                 type="radio"
                 name="background"
                 checked={!downloadOptions.transparent}
-                onChange={() => setDownloadOptions({ ...downloadOptions, transparent: false })}
+                onChange={() =>
+                  setDownloadOptions({ ...downloadOptions, transparent: false })
+                }
                 className="sr-only"
               />
               <div className="w-4 h-4 rounded border-2 border-gray-300 bg-white"></div>
@@ -160,7 +212,9 @@ export function MermaidDownloadModal({
                 type="radio"
                 name="background"
                 checked={downloadOptions.transparent}
-                onChange={() => setDownloadOptions({ ...downloadOptions, transparent: true })}
+                onChange={() =>
+                  setDownloadOptions({ ...downloadOptions, transparent: true })
+                }
                 className="sr-only"
               />
               <div className="w-4 h-4 rounded border-2 border-gray-300 bg-transparent"></div>
@@ -169,7 +223,8 @@ export function MermaidDownloadModal({
           </div>
           {downloadOptions.format === "jpg" && downloadOptions.transparent && (
             <p className="text-xs text-muted-foreground mt-2">
-              Note: JPG format doesn't support transparency. Will use background color.
+              Note: JPG format doesn't support transparency. Will use background
+              color.
             </p>
           )}
         </div>
@@ -179,12 +234,17 @@ export function MermaidDownloadModal({
           <h3 className="text-sm font-medium mb-3">Dimensions</h3>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Width (px)</label>
+              <label className="block text-sm font-medium mb-1">
+                Width (px)
+              </label>
               <input
                 type="number"
                 value={downloadOptions.width}
                 onChange={(e) =>
-                  setDownloadOptions({ ...downloadOptions, width: parseInt(e.target.value) || 800 })
+                  setDownloadOptions({
+                    ...downloadOptions,
+                    width: parseInt(e.target.value) || 800,
+                  })
                 }
                 className="w-full px-3 py-2 border border-border rounded-md bg-background"
                 min="100"
@@ -192,12 +252,17 @@ export function MermaidDownloadModal({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Height (px)</label>
+              <label className="block text-sm font-medium mb-1">
+                Height (px)
+              </label>
               <input
                 type="number"
                 value={downloadOptions.height}
                 onChange={(e) =>
-                  setDownloadOptions({ ...downloadOptions, height: parseInt(e.target.value) || 600 })
+                  setDownloadOptions({
+                    ...downloadOptions,
+                    height: parseInt(e.target.value) || 600,
+                  })
                 }
                 className="w-full px-3 py-2 border border-border rounded-md bg-background"
                 min="100"
