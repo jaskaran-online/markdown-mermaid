@@ -1,8 +1,17 @@
+---
+description: "Complete development guide for building a Markdown editor with Mermaid diagram support. Learn to create a client-side browser-based editor with live preview, export to PDF/HTML, and localStorage persistence."
+keywords: "Markdown editor, Mermaid diagrams, live preview editor, client-side markdown editor, diagram editor, Markdown to PDF, Markdown to HTML converter, browser-based editor, technical documentation tool"
+---
+
 # Markdown + Mermaid Editor/Preview - Development Guide
 
 ## Project Overview
 
-This document serves as a comprehensive guide for developing the Markdown + Mermaid Editor/Preview application. The application is a client-side, browser-based editor that allows users to write Markdown with Mermaid diagrams and see a live preview.
+This comprehensive development guide explains how to build a Markdown editor with Mermaid diagram support. The application is a client-side, browser-based editor that allows users to write Markdown with Mermaid diagrams and see a live preview. Perfect for developers, technical writers, and students who need to create documentation with diagrams.
+
+**Target Audience**: Developers, technical writers, students, documentation teams
+**Use Cases**: Technical documentation, architecture diagrams, note-taking, specification writing
+**Core Features**: Real-time preview, Mermaid diagram rendering, export to multiple formats, offline support
 
 ## Table of Contents
 
