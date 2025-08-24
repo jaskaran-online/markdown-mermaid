@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useEffect, useRef } from "react";
+import { useMemo, useEffect, useRef, useState } from "react";
 import { remark } from "remark";
 import remarkGfm from "remark-gfm";
 import remarkHtml from "remark-html";
@@ -11,6 +11,7 @@ import {
   oneLight,
 } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { useTheme } from "@/contexts/theme-context";
+import { MermaidDownloadModal } from "@/components/mermaid-download-modal";
 
 interface LargePreviewProps {
   content: string;
@@ -20,6 +21,15 @@ interface LargePreviewProps {
 export function LargePreview({ content, className }: LargePreviewProps) {
   const previewRef = useRef<HTMLDivElement>(null);
   const { theme } = useTheme();
+  const [downloadModalState, setDownloadModalState] = useState<{
+    isOpen: boolean;
+    mermaidCode: string;
+    diagramTitle: string;
+  }>({
+    isOpen: false,
+    mermaidCode: "",
+    diagramTitle: "",
+  });
 
   // Initialize and update Mermaid theme
   useEffect(() => {

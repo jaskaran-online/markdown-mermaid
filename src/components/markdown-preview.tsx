@@ -228,18 +228,20 @@ export function MarkdownPreview({
     if (actualRef.current && processedContent.codeBlocks.length > 0) {
       const renderDiagrams = async () => {
         // Only clear mermaid diagrams if content has actually changed
-        const mermaidBlocks = processedContent.codeBlocks.filter(block => block.isMermaid);
-        
+        const mermaidBlocks = processedContent.codeBlocks.filter(
+          (block) => block.isMermaid
+        );
+
         for (const block of mermaidBlocks) {
           const placeholder = actualRef.current?.querySelector(
             `[data-block-id="${block.id}"]`
           );
-          
+
           // Skip if already rendered and content hasn't changed
-          if (placeholder && placeholder.querySelector('.mermaid-container')) {
+          if (placeholder && placeholder.querySelector(".mermaid-container")) {
             continue;
           }
-          
+
           if (placeholder) {
             try {
               // Clear the placeholder first
@@ -345,20 +347,23 @@ export function MarkdownPreview({
   // Handle theme changes for existing Mermaid diagrams
   useEffect(() => {
     if (actualRef.current) {
-      const mermaidContainers = actualRef.current.querySelectorAll('.mermaid-container');
+      const mermaidContainers =
+        actualRef.current.querySelectorAll(".mermaid-container");
       if (mermaidContainers.length > 0) {
         // Re-render only Mermaid diagrams when theme changes
         const renderDiagrams = async () => {
           for (const container of mermaidContainers) {
-            const placeholder = container.closest('[data-block-id]');
+            const placeholder = container.closest("[data-block-id]");
             if (placeholder) {
-              const blockId = placeholder.getAttribute('data-block-id');
-              const block = processedContent.codeBlocks.find(b => b.id === blockId);
-              
+              const blockId = placeholder.getAttribute("data-block-id");
+              const block = processedContent.codeBlocks.find(
+                (b) => b.id === blockId
+              );
+
               if (block && block.isMermaid) {
                 try {
                   // Clear the container but keep the structure
-                  const svgContainer = container.querySelector('div');
+                  const svgContainer = container.querySelector("div");
                   if (svgContainer) {
                     const diagramId = `mermaid-${blockId}-${Date.now()}`;
                     const processedCode = block.code
@@ -369,7 +374,10 @@ export function MarkdownPreview({
                       .replace(/<span[^>]*>/g, "")
                       .replace(/<\/span>/g, "");
 
-                    const { svg } = await mermaid.render(diagramId, processedCode);
+                    const { svg } = await mermaid.render(
+                      diagramId,
+                      processedCode
+                    );
                     svgContainer.innerHTML = svg;
                   }
                 } catch (error) {
