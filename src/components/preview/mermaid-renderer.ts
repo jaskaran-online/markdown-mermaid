@@ -3,6 +3,12 @@
 import mermaid from "mermaid";
 import type { CodeBlock } from "@/lib/markdown/types";
 
+let renderSeq = 0;
+function nextToken() {
+  renderSeq += 1;
+  return String(renderSeq);
+}
+
 function preprocess(code: string) {
   return code
     .replace(/\r\n/g, "\n")
@@ -16,7 +22,8 @@ function preprocess(code: string) {
 export async function renderMermaidBlocks(
   container: HTMLElement,
   blocks: CodeBlock[],
-  openDownload: (code: string, title: string) => void
+  openDownload: (code: string, title: string) => void,
+  token?: string
 ) {
   const mermaidBlocks = blocks.filter((b) => b.isMermaid);
   for (const block of mermaidBlocks) {
@@ -26,10 +33,17 @@ export async function renderMermaidBlocks(
 
     try {
       placeholder.innerHTML = "";
+      const renderToken = token ?? nextToken();
+      (placeholder as HTMLElement).dataset.renderToken = renderToken;
       const diagramId = `mermaid-${block.id}-${Date.now()}`;
       const processedCode = preprocess(block.code);
 
       const { svg } = await mermaid.render(diagramId, processedCode);
+
+      // Skip if a newer render has been scheduled for this placeholder
+      if ((placeholder as HTMLElement).dataset.renderToken !== renderToken) {
+        continue;
+      }
 
       const wrapper = document.createElement("div");
       wrapper.className = "relative group mermaid-container";
@@ -118,5 +132,11 @@ export async function refreshMermaidBlocks(
 ) {
   // Remove existing rendered mermaid containers to force re-render
   container.querySelectorAll(".mermaid-container").forEach((el) => el.remove());
-  await renderMermaidBlocks(container, blocks, openDownload);
+  // Mark placeholders with a new token to cancel in-flight renders
+  const token = nextToken();
+  const placeholders = container.querySelectorAll('[data-block-id]');
+  placeholders.forEach((ph) => {
+    (ph as HTMLElement).dataset.renderToken = token;
+  });
+  await renderMermaidBlocks(container, blocks, openDownload, token);
 }
