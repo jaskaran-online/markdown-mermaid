@@ -5,6 +5,8 @@ import { remark } from 'remark'
 import remarkGfm from 'remark-gfm'
 import remarkHtml from 'remark-html'
 import mermaid from 'mermaid'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { Button } from '@/components/ui/button'
 import { useTheme } from '@/contexts/theme-context'
 
@@ -29,28 +31,90 @@ export function MarkdownPreview({ content, className, previewRef }: MarkdownPrev
     })
   }, [theme])
 
-  const renderedContent = useMemo(() => {
+  const processedContent = useMemo(() => {
     try {
-      // First, preprocess the content to identify Mermaid blocks
-      const processedContent = content.replace(
+      // Extract code blocks and mermaid blocks
+      const codeBlocks: { id: string; language: string; code: string; isMermaid: boolean }[] = []
+      let blockCounter = 0
+
+      // First, handle Mermaid blocks
+      let processedContent = content.replace(
         /```mermaid\s*\n([\s\S]*?)\n```/g,
         (_, diagramCode) => {
-          const diagramId = `mermaid-${Math.random().toString(36).substring(2, 11)}`
-          return `<div class="mermaid" data-mermaid-id="${diagramId}">${diagramCode.trim()}</div>`
+          const blockId = `block-${blockCounter++}`
+          codeBlocks.push({
+            id: blockId,
+            language: 'mermaid',
+            code: diagramCode.trim(),
+            isMermaid: true
+          })
+          return `<div class="code-block-placeholder" data-block-id="${blockId}"></div>`
         }
       )
 
+      // Then handle regular code blocks
+      processedContent = processedContent.replace(
+        /```(\w+)?\s*\n([\s\S]*?)\n```/g,
+        (_, language, code) => {
+          const blockId = `block-${blockCounter++}`
+          codeBlocks.push({
+            id: blockId,
+            language: language || 'text',
+            code: code.trim(),
+            isMermaid: false
+          })
+          return `<div class="code-block-placeholder" data-block-id="${blockId}"></div>`
+        }
+      )
+
+      // Process markdown to HTML
       const processed = remark()
         .use(remarkGfm)
         .use(remarkHtml, { sanitize: false })
         .processSync(processedContent)
 
-      return processed.toString()
+      return {
+        html: processed.toString(),
+        codeBlocks
+      }
     } catch (error) {
       console.error('Error processing markdown:', error)
-      return '<p>Error rendering markdown</p>'
+      return {
+        html: '<p>Error rendering markdown</p>',
+        codeBlocks: []
+      }
     }
   }, [content])
+
+  // Render code blocks after HTML is inserted
+  useEffect(() => {
+    if (actualRef.current && processedContent.codeBlocks.length > 0) {
+      processedContent.codeBlocks.forEach((block) => {
+        const placeholder = actualRef.current?.querySelector(`[data-block-id="${block.id}"]`)
+        if (placeholder && !block.isMermaid) {
+          const root = document.createElement('div')
+          placeholder.parentNode?.replaceChild(root, placeholder)
+
+          // Use React to render the syntax highlighter
+          import('react-dom/client').then(({ createRoot }) => {
+            createRoot(root).render(
+              <SyntaxHighlighter
+                language={block.language}
+                style={theme === 'dark' ? oneDark : oneLight}
+                customStyle={{
+                  margin: '1rem 0',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.875rem'
+                }}
+              >
+                {block.code}
+              </SyntaxHighlighter>
+            )
+          })
+        }
+      })
+    }
+  }, [processedContent, theme])
 
   // Render Mermaid diagrams after content is updated
   useEffect(() => {
@@ -72,7 +136,7 @@ export function MarkdownPreview({ content, className, previewRef }: MarkdownPrev
         }
       })
     }
-  }, [renderedContent, actualRef])
+  }, [processedContent, actualRef])
 
   return (
     <div className={`flex flex-col h-full ${className}`}>
@@ -88,7 +152,7 @@ export function MarkdownPreview({ content, className, previewRef }: MarkdownPrev
         <div
           ref={actualRef}
           className="markdown-content prose prose-sm max-w-none dark:prose-invert"
-          dangerouslySetInnerHTML={{ __html: renderedContent }}
+          dangerouslySetInnerHTML={{ __html: processedContent.html }}
         />
       </div>
     </div>
