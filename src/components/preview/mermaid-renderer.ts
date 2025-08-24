@@ -111,3 +111,12 @@ export async function rerenderMermaidForTheme(
   }
 }
 
+export async function refreshMermaidBlocks(
+  container: HTMLElement,
+  blocks: CodeBlock[],
+  openDownload: (code: string, title: string) => void
+) {
+  // Remove existing rendered mermaid containers to force re-render
+  container.querySelectorAll(".mermaid-container").forEach((el) => el.remove());
+  await renderMermaidBlocks(container, blocks, openDownload);
+}

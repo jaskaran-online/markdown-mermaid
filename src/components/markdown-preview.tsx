@@ -9,7 +9,7 @@ import { processMarkdown } from "@/lib/markdown/processor";
 import { initMermaid } from "@/lib/mermaid-theme";
 import { PreviewHeader } from "@/components/preview/PreviewHeader";
 import { renderCodeBlocks } from "@/components/preview/code-block-renderer";
-import { renderMermaidBlocks, rerenderMermaidForTheme } from "@/components/preview/mermaid-renderer";
+import { renderMermaidBlocks, rerenderMermaidForTheme, refreshMermaidBlocks } from "@/components/preview/mermaid-renderer";
 
 interface MarkdownPreviewProps {
   content: string;
@@ -72,6 +72,19 @@ export function MarkdownPreview({ content, className, previewRef }: MarkdownPrev
     }
   }, [theme, actualRef, processedContent.codeBlocks]);
 
+  // After closing large preview modal, refresh mermaid diagrams in the panel
+  useEffect(() => {
+    if (!isLargePreviewOpen && actualRef.current && processedContent.codeBlocks.length > 0) {
+      refreshMermaidBlocks(
+        actualRef.current,
+        processedContent.codeBlocks,
+        (code, title) => setDownloadModalState({ isOpen: true, mermaidCode: code, diagramTitle: title })
+      );
+    }
+    // Only trigger on modal open/close transitions
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLargePreviewOpen]);
+
   return (
     <div className={`flex flex-col h-full ${className}`}>
       <PreviewHeader onFullScreen={() => setIsLargePreviewOpen(true)} onExport={() => {}} />
@@ -98,4 +111,3 @@ export function MarkdownPreview({ content, className, previewRef }: MarkdownPrev
     </div>
   );
 }
-
