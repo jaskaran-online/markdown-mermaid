@@ -593,6 +593,7 @@ export function MarkdownApp() {
     return raw === "editor" || raw === "preview" ? (raw as any) : "none";
   });
   const [dragging, setDragging] = useState(false);
+  const [previewRefreshKey, setPreviewRefreshKey] = useState(0);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -620,7 +621,11 @@ export function MarkdownApp() {
       const next = (e.clientX - rect.left) / rect.width;
       setSplit(Math.min(0.85, Math.max(0.15, next)));
     };
-    const onUp = () => setDragging(false);
+    const onUp = () => {
+      setDragging(false);
+      // Trigger a refresh after resizing completes
+      setPreviewRefreshKey((k) => k + 1);
+    };
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
     return () => {
@@ -634,7 +639,13 @@ export function MarkdownApp() {
   const resetSplit = () => {
     setExpanded("none");
     setSplit(0.5);
+    setPreviewRefreshKey((k) => k + 1);
   };
+
+  // Refresh preview when expanded target changes
+  useEffect(() => {
+    setPreviewRefreshKey((k) => k + 1);
+  }, [expanded]);
 
   // Load current document on mount
   useEffect(() => {
@@ -856,6 +867,7 @@ export function MarkdownApp() {
             content={content}
             className="h-full"
             previewRef={previewRef}
+            refreshKey={previewRefreshKey}
           />
         </div>
       </div>

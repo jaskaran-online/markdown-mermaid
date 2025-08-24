@@ -15,9 +15,10 @@ interface MarkdownPreviewProps {
   content: string;
   className?: string;
   previewRef?: React.RefObject<HTMLDivElement | null>;
+  refreshKey?: number; // triggers layout-based refreshes (split/expand)
 }
 
-export function MarkdownPreview({ content, className, previewRef }: MarkdownPreviewProps) {
+export function MarkdownPreview({ content, className, previewRef, refreshKey }: MarkdownPreviewProps) {
   const internalRef = useRef<HTMLDivElement>(null);
   const actualRef = previewRef || internalRef;
   const { theme } = useTheme();
@@ -65,10 +66,14 @@ export function MarkdownPreview({ content, className, previewRef }: MarkdownPrev
     }
   }, [processedContent, actualRef]);
 
-  // Handle theme changes for existing Mermaid diagrams
+  // Handle theme changes: force a full refresh for reliability
   useEffect(() => {
     if (actualRef.current) {
-      rerenderMermaidForTheme(actualRef.current, processedContent.codeBlocks);
+      refreshMermaidBlocks(
+        actualRef.current,
+        processedContent.codeBlocks,
+        (code, title) => setDownloadModalState({ isOpen: true, mermaidCode: code, diagramTitle: title })
+      );
     }
   }, [theme, actualRef, processedContent.codeBlocks]);
 
@@ -84,6 +89,21 @@ export function MarkdownPreview({ content, className, previewRef }: MarkdownPrev
     // Only trigger on modal open/close transitions
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLargePreviewOpen]);
+
+  // Refresh when parent layout changes (drag split or expand toggles)
+  useEffect(() => {
+    if (actualRef.current && processedContent.codeBlocks.length > 0) {
+      // Defer to next frame to let layout settle
+      requestAnimationFrame(() => {
+        refreshMermaidBlocks(
+          actualRef.current!,
+          processedContent.codeBlocks,
+          (code, title) => setDownloadModalState({ isOpen: true, mermaidCode: code, diagramTitle: title })
+        );
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey]);
 
   return (
     <div className={`flex flex-col h-full ${className}`}>
