@@ -15,23 +15,28 @@ import { useTheme } from "@/contexts/theme-context";
 import { Modal } from "@/components/ui/modal";
 import { LargePreview } from "@/components/large-preview";
 import { MermaidDownloadModal } from "@/components/mermaid-download-modal";
-import { Maximize2, Download } from "lucide-react";
+import { Maximize2, Download, ZoomIn, ZoomOut, RotateCcw, Move } from "lucide-react";
 
 interface MarkdownPreviewProps {
   content: string;
   className?: string;
   previewRef?: React.RefObject<HTMLDivElement | null>;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
 }
 
 export function MarkdownPreview({
   content,
   className,
   previewRef,
+  isExpanded = false,
+  onToggleExpand,
 }: MarkdownPreviewProps) {
   const internalRef = useRef<HTMLDivElement>(null);
   const actualRef = previewRef || internalRef;
   const { theme } = useTheme();
   const [isLargePreviewOpen, setIsLargePreviewOpen] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(100);
   const [downloadModalState, setDownloadModalState] = useState<{
     isOpen: boolean;
     mermaidCode: string;
@@ -393,11 +398,69 @@ export function MarkdownPreview({
     }
   }, [theme, actualRef, processedContent.codeBlocks]);
 
+  const handleZoomIn = () => {
+    setZoomLevel(prev => Math.min(prev + 25, 200));
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel(prev => Math.max(prev - 25, 50));
+  };
+
+  const handleResetZoom = () => {
+    setZoomLevel(100);
+  };
+
   return (
     <div className={`flex flex-col h-full ${className}`}>
       <div className="flex items-center justify-between p-2 border-b">
         <h3 className="text-sm font-medium">Preview</h3>
         <div className="flex gap-2">
+          {/* Zoom Controls */}
+          <div className="flex items-center gap-1 border rounded-md">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleZoomOut}
+              disabled={zoomLevel <= 50}
+              className="h-8 w-8 p-0"
+            >
+              <ZoomOut className="h-3 w-3" />
+            </Button>
+            <span className="text-xs px-2 min-w-[3rem] text-center">
+              {zoomLevel}%
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleZoomIn}
+              disabled={zoomLevel >= 200}
+              className="h-8 w-8 p-0"
+            >
+              <ZoomIn className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleResetZoom}
+              className="h-8 w-8 p-0"
+            >
+              <RotateCcw className="h-3 w-3" />
+            </Button>
+          </div>
+          
+          {/* Expand/Collapse Button */}
+          {onToggleExpand && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onToggleExpand}
+              className="flex items-center gap-1"
+            >
+              <Move className="h-3 w-3" />
+              {isExpanded ? "Collapse" : "Expand"}
+            </Button>
+          )}
+          
           <Button
             variant="outline"
             size="sm"
@@ -412,12 +475,26 @@ export function MarkdownPreview({
           </Button>
         </div>
       </div>
-      <div className="flex-1 p-4 overflow-auto">
-        <div
-          ref={actualRef}
-          className="markdown-content prose prose-sm max-w-none dark:prose-invert"
-          dangerouslySetInnerHTML={{ __html: processedContent.html }}
-        />
+      
+      {/* Preview Content with Custom Scrollbar and Zoom */}
+      <div className="flex-1 relative overflow-hidden">
+        <div 
+          className="h-full overflow-auto custom-scrollbar"
+          style={{
+            transform: `scale(${zoomLevel / 100})`,
+            transformOrigin: 'top left',
+            width: `${100 / (zoomLevel / 100)}%`,
+            height: `${100 / (zoomLevel / 100)}%`,
+          }}
+        >
+          <div className="p-4">
+            <div
+              ref={actualRef}
+              className="markdown-content prose prose-sm max-w-none dark:prose-invert"
+              dangerouslySetInnerHTML={{ __html: processedContent.html }}
+            />
+          </div>
+        </div>
       </div>
 
       {/* Large Preview Modal */}

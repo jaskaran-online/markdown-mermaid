@@ -577,6 +577,7 @@ export function MarkdownApp() {
   const { theme } = useTheme();
   const [content, setContent] = useState(DEFAULT_CONTENT);
   const [urlInput, setUrlInput] = useState("");
+  const [isPreviewExpanded, setIsPreviewExpanded] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
 
   // Load current document on mount
@@ -684,6 +685,10 @@ export function MarkdownApp() {
     }
   };
 
+  const handleTogglePreviewExpand = () => {
+    setIsPreviewExpanded(!isPreviewExpanded);
+  };
+
   if (isLoading) {
     return (
       <div className="h-screen flex items-center justify-center">
@@ -762,18 +767,20 @@ export function MarkdownApp() {
 
       {/* Main content */}
       <div className="flex-1 flex">
-        <div className="flex-1 border-r">
+        <div className={`${isPreviewExpanded ? 'w-1/3' : 'flex-1'} border-r transition-all duration-300 ease-in-out`}>
           <MarkdownEditor
             value={content}
             onChange={handleContentChange}
             className="h-full"
           />
         </div>
-        <div className="flex-1">
+        <div className={`${isPreviewExpanded ? 'w-2/3' : 'flex-1'} transition-all duration-300 ease-in-out`}>
           <MarkdownPreview
             content={content}
             className="h-full"
             previewRef={previewRef}
+            isExpanded={isPreviewExpanded}
+            onToggleExpand={handleTogglePreviewExpand}
           />
         </div>
       </div>
