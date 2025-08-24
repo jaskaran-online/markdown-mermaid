@@ -1,6 +1,6 @@
 # Product Requirements Document (PRD)
 
-## Markdown + Mermaid Editor/Preview
+## Markdown + Mermaid Editor/Preview (Web‑Only)
 
 Last updated: 2025-08-24
 
@@ -9,7 +9,7 @@ Owner: TBD
 
 ## 1) Overview
 
-Build a fast, reliable, two‑pane Markdown editor with live preview that fully supports Mermaid diagrams. Users can author Markdown in a code‑editor pane and see a pixel‑perfect preview beside it. Content can be exported to multiple formats (Markdown, HTML, PDF, DOCX), preserving styles and rendering Mermaid diagrams into vector graphics where applicable.
+Build a fast, reliable, two‑pane Markdown editor with live preview that fully supports Mermaid diagrams. Runs entirely in the browser (client‑side, no backend). Users can author Markdown in a code‑editor pane and see a pixel‑perfect preview beside it. Content can be exported to multiple formats (Markdown, HTML, PDF, DOCX), preserving styles and rendering Mermaid diagrams into vector graphics where applicable. Work‑in‑progress state persists locally via browser storage (localStorage); no accounts or cloud storage.
 
 
 ## 2) Goals and Non‑Goals
@@ -21,7 +21,8 @@ Build a fast, reliable, two‑pane Markdown editor with live preview that fully 
 - Smooth typing with low‑latency preview and scroll sync.
 - Sensible defaults for typography and theming (light/dark).
 - Safe rendering: sanitize HTML; never run untrusted scripts.
-- Works offline; no account required for core features.
+ - Web‑only, client‑side; no backend or sign‑in.
+ - Persistence via localStorage; works offline.
 
 ### Non‑Goals (initial release)
 - Real‑time multi‑user collaboration.
@@ -29,6 +30,7 @@ Build a fast, reliable, two‑pane Markdown editor with live preview that fully 
 - Advanced WYSIWYG editing; this is source‑oriented.
 - Equation rendering (MathJax/KaTeX) beyond basic text unless explicitly prioritized.
 - Mermaid “external resource” loading or custom JS execution.
+ - Native desktop packaging (Electron) or OS‑level filesystem APIs.
 
 
 ## 3) Personas
@@ -70,17 +72,18 @@ Preview
 - Theme aware: light/dark with synchronized Mermaid theme; user can override Mermaid theme.
 - Sanitization: strip or neutralize unsafe HTML; allow a safe subset of inline HTML optionally.
 
-Files and Persistence
-- Create, open, save, save as for `.md` files (UTF‑8).
-- Autosave: on change with idle debounce (e.g., 2s).
-- “Dirty” indicator for unsaved changes; prompt on close with unsaved edits.
-- Recent files list (local history), clearable by user.
-- Drag‑and‑drop to open file(s); drop area highlights when dragging.
+Files and Persistence (Web‑only)
+- Open `.md` files via file picker or drag‑and‑drop (processed in memory; never uploaded).
+- Save/Export via browser download (File System Access API if available; otherwise blob download).
+- Autosave: snapshot current document to `localStorage` on change (debounced ~2s).
+- “Dirty” indicator for unsaved changes; prompt on tab/window close if unsaved.
+- Recent files list in `localStorage` (names and timestamps; no full paths stored).
+- Optional in‑browser “Untitled” documents managed in `localStorage` until downloaded.
 
 Export
 - MD: save current source as `.md`.
 - HTML: export a self‑contained HTML (inline CSS and optional base64 images) that renders Mermaid offline.
-- PDF: export paginated PDF with selectable page size, margins, header/footer option, and clickable links.
+ - PDF: export via browser print‑to‑PDF from a print‑optimized HTML view; margins, page size, header/footer via print CSS.
 - DOCX: export with correct heading hierarchy, lists, images, code blocks; Mermaid diagrams embedded as vector (SVG) or high‑DPI PNG fallback.
 - Export options dialog: choose filename, location, page options (PDF), theme (light/dark), and inclusion of Table of Contents (optional for HTML/PDF).
 
@@ -124,14 +127,13 @@ Reliability
 - Autosave prevents data loss on crash for changes older than 3 seconds.
 
 Security and Privacy
-- No external network calls for core rendering; all processing local.
+- No network calls; all processing is local to the browser.
 - Sanitize Markdown/HTML to prevent XSS in preview and exported HTML.
 - File access limited to files user selects; no background scanning.
-- Telemetry opt‑in only; disabled by default (if implemented later).
+- No telemetry or analytics in MVP.
 
 Compatibility
-- Desktop web: latest Chrome, Edge, Firefox, Safari.
-- Optional desktop packaging: Electron (macOS/Windows/Linux) to enable native PDF export and local filesystem access.
+- Desktop web only: latest Chrome, Edge, Firefox, Safari.
 
 
 ## 6) UX and Interaction Design
@@ -166,13 +168,14 @@ Mermaid Details
 
 Local Files
 - Primary format: `.md` text, UTF‑8, LF line endings by default.
+- Opened files are handled in memory only; nothing is uploaded or stored remotely.
 
 Preferences
-- Stored locally (e.g., `localStorage` or app config JSON) keyed by version; includes theme, debounce, autosave, last open folder, recent files.
+- Stored in `localStorage` keyed by version; includes theme, debounce, autosave, recent files, and last document snapshot(s).
 
 Export Artifacts
 - HTML: single file, includes inline CSS and embedded Mermaid script or pre‑rendered SVGs.
-- PDF: generated from print‑quality HTML; metadata includes title, author (optional), subject.
+- PDF: produced via browser print pipeline from a print‑optimized HTML view; metadata includes title, author (optional), subject.
 - DOCX: OOXML package with styles for headings, code, and embedded images/SVG.
 
 
@@ -205,10 +208,9 @@ Markdown → MD
 - Localize all visible strings; initial release ships English only.
 
 
-## 10) Telemetry and Logging (Optional, opt‑in)
+## 10) Telemetry and Logging
 
-- Session start/end, feature usage (export types), crashes; no document content captured.
-- Toggle in settings; default off.
+- Out of scope for web‑only MVP; no analytics or network calls.
 
 
 ## 11) Quality, Testing, and Acceptance Criteria
@@ -265,12 +267,10 @@ v1.2
 
 ## 15) Open Questions
 
-- Accounts: Should users authenticate or remain local‑only? If accounts exist, what for (sync, settings backup)?
 - Collaboration: Any need for commenting or multi‑user editing later?
 - Math support: Should we include KaTeX/MathJax in MVP?
 - Custom CSS: Allow user‑supplied CSS for preview/export?
-- Diagram export: Always render Mermaid to SVG in HTML/DOCX/PDF, or keep live Mermaid in HTML? Default here proposes pre‑rendered SVG for portability.
-- The user note “user can be …” appears incomplete; clarify intended capability (e.g., anonymous vs. signed‑in, roles, or offline‑only).
+- Diagram export: Always render Mermaid to SVG in HTML/DOCX/PDF, or keep live Mermaid in HTML? Default remains pre‑rendered SVG for portability.
 
 
 ## 16) Out of Scope (for now)
@@ -279,6 +279,7 @@ v1.2
 - Real‑time collaboration, comments, or presence.
 - Cloud storage integrations (Drive, Dropbox, Git);
 - Plugin marketplace or arbitrary JS execution.
+ - Native desktop packaging (Electron) and OS‑level integrations.
 
 
 ## 17) References
@@ -286,4 +287,3 @@ v1.2
 - GitHub‑flavored Markdown spec
 - Mermaid v10+ documentation
 - DOCX OOXML reference (for mapping styles)
-
