@@ -377,4 +377,13 @@
   .prose-lg td {
     padding: 1rem;
   }
+
+  /* Mermaid diagram download button styles */
+  .markdown-content .group:hover .opacity-0 {
+    opacity: 1;
+  }
+
+  .markdown-content .group .opacity-0 {
+    transition: opacity 0.2s ease-in-out;
+  }
 }

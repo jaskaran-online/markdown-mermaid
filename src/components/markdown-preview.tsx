@@ -14,7 +14,8 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "@/contexts/theme-context";
 import { Modal } from "@/components/ui/modal";
 import { LargePreview } from "@/components/large-preview";
-import { Maximize2 } from "lucide-react";
+import { MermaidDownloadModal } from "@/components/mermaid-download-modal";
+import { Maximize2, Download } from "lucide-react";
 
 interface MarkdownPreviewProps {
   content: string;
@@ -31,6 +32,15 @@ export function MarkdownPreview({
   const actualRef = previewRef || internalRef;
   const { theme } = useTheme();
   const [isLargePreviewOpen, setIsLargePreviewOpen] = useState(false);
+  const [downloadModalState, setDownloadModalState] = useState<{
+    isOpen: boolean;
+    mermaidCode: string;
+    diagramTitle: string;
+  }>({
+    isOpen: false,
+    mermaidCode: "",
+    diagramTitle: "",
+  });
 
   // Initialize and update Mermaid theme
   useEffect(() => {
@@ -223,7 +233,7 @@ export function MarkdownPreview({
           actualRef.current?.querySelectorAll(".mermaid");
         existingMermaidElements?.forEach((el) => el.remove());
 
-        for (const block of processedContent.codeBlocks) {
+                for (const block of processedContent.codeBlocks) {
           if (block.isMermaid) {
             const placeholder = actualRef.current?.querySelector(
               `[data-block-id="${block.id}"]`
@@ -232,18 +242,18 @@ export function MarkdownPreview({
               try {
                 // Clear the placeholder first
                 placeholder.innerHTML = "";
-
+                
                 // Create a unique ID for this diagram
                 const diagramId = `mermaid-${block.id}-${Date.now()}`;
-
+                
                 // Preprocess the mermaid code to handle HTML tags better
                 let processedCode = block.code;
-
+                
                 // Ensure proper line endings
                 processedCode = processedCode
                   .replace(/\r\n/g, "\n")
                   .replace(/\r/g, "\n");
-
+                
                 // Remove any potential HTML artifacts that might have been introduced
                 processedCode = processedCode
                   .replace(/<div[^>]*>/g, "")
@@ -251,13 +261,45 @@ export function MarkdownPreview({
                 processedCode = processedCode
                   .replace(/<span[^>]*>/g, "")
                   .replace(/<\/span>/g, "");
-
+                
                 console.log("Rendering mermaid diagram:", diagramId);
                 console.log("Original mermaid code:", block.code);
                 console.log("Processed mermaid code:", processedCode);
-
+                
                 const { svg } = await mermaid.render(diagramId, processedCode);
-                placeholder.innerHTML = svg;
+                
+                // Create container for diagram and download button
+                const container = document.createElement("div");
+                container.className = "relative group";
+                
+                // Add the SVG
+                const svgContainer = document.createElement("div");
+                svgContainer.innerHTML = svg;
+                container.appendChild(svgContainer);
+                
+                // Add download button overlay
+                const downloadButton = document.createElement("button");
+                downloadButton.className = "absolute top-2 right-2 bg-background/80 backdrop-blur-sm border border-border rounded-md p-2 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background/90";
+                downloadButton.innerHTML = `
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                `;
+                downloadButton.title = "Download diagram";
+                
+                // Add click handler for download
+                downloadButton.addEventListener("click", (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setDownloadModalState({
+                    isOpen: true,
+                    mermaidCode: block.code,
+                    diagramTitle: `Diagram ${block.id}`,
+                  });
+                });
+                
+                container.appendChild(downloadButton);
+                placeholder.appendChild(container);
               } catch (error) {
                 console.error("Error rendering mermaid diagram:", error);
                 placeholder.innerHTML = `
@@ -334,6 +376,14 @@ export function MarkdownPreview({
       >
         <LargePreview content={content} />
       </Modal>
+
+      {/* Mermaid Download Modal */}
+      <MermaidDownloadModal
+        isOpen={downloadModalState.isOpen}
+        onClose={() => setDownloadModalState({ ...downloadModalState, isOpen: false })}
+        mermaidCode={downloadModalState.mermaidCode}
+        diagramTitle={downloadModalState.diagramTitle}
+      />
     </div>
   );
 }
