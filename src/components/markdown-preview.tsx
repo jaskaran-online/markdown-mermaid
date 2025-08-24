@@ -87,7 +87,7 @@ export function MarkdownPreview({
           // Validate mermaid code before adding
           if (cleanCode && !cleanCode.includes("```")) {
             // Additional validation for complex mermaid diagrams
-            const hasValidSyntax =
+            const hasValidSyntax = 
               cleanCode.includes("flowchart") ||
               cleanCode.includes("graph") ||
               cleanCode.includes("sequenceDiagram") ||
@@ -101,7 +101,12 @@ export function MarkdownPreview({
               cleanCode.includes("C4Context") ||
               cleanCode.includes("mindmap");
 
-            if (hasValidSyntax) {
+            // Check for HTML artifacts that might cause parsing issues
+            const hasHtmlArtifacts = cleanCode.includes('<div') || cleanCode.includes('</div>') || 
+                                   cleanCode.includes('<span') || cleanCode.includes('</span>') ||
+                                   cleanCode.includes('class=') || cleanCode.includes('data-block-id=');
+
+            if (hasValidSyntax && !hasHtmlArtifacts) {
               codeBlocks.push({
                 id: blockId,
                 language: "mermaid",
@@ -110,7 +115,7 @@ export function MarkdownPreview({
               });
               return `<div class="code-block-placeholder" data-block-id="${blockId}"></div>`;
             } else {
-              // If it doesn't have valid mermaid syntax, treat as text
+              // If it doesn't have valid mermaid syntax or has HTML artifacts, treat as text
               codeBlocks.push({
                 id: blockId,
                 language: "text",
@@ -204,8 +209,9 @@ export function MarkdownPreview({
   useEffect(() => {
     if (actualRef.current && processedContent.codeBlocks.length > 0) {
       // Clear any existing mermaid diagrams first
-      const existingMermaidElements = actualRef.current.querySelectorAll('.mermaid');
-      existingMermaidElements.forEach(el => el.remove());
+      const existingMermaidElements =
+        actualRef.current.querySelectorAll(".mermaid");
+      existingMermaidElements.forEach((el) => el.remove());
 
       processedContent.codeBlocks.forEach(async (block) => {
         if (block.isMermaid) {
@@ -220,10 +226,21 @@ export function MarkdownPreview({
               // Create a unique ID for this diagram
               const diagramId = `mermaid-${block.id}-${Date.now()}`;
               
-              console.log('Rendering mermaid diagram:', diagramId);
-              console.log('Mermaid code:', block.code);
+              // Preprocess the mermaid code to handle HTML tags better
+              let processedCode = block.code;
               
-              const { svg } = await mermaid.render(diagramId, block.code);
+              // Ensure proper line endings
+              processedCode = processedCode.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+              
+              // Remove any potential HTML artifacts that might have been introduced
+              processedCode = processedCode.replace(/<div[^>]*>/g, '').replace(/<\/div>/g, '');
+              processedCode = processedCode.replace(/<span[^>]*>/g, '').replace(/<\/span>/g, '');
+              
+              console.log('Rendering mermaid diagram:', diagramId);
+              console.log('Original mermaid code:', block.code);
+              console.log('Processed mermaid code:', processedCode);
+              
+              const { svg } = await mermaid.render(diagramId, processedCode);
               placeholder.innerHTML = svg;
             } catch (error) {
               console.error("Error rendering mermaid diagram:", error);
@@ -238,11 +255,17 @@ export function MarkdownPreview({
                       <p class="text-sm mb-2">Could not render diagram. Please check the syntax.</p>
                       <details class="text-xs">
                         <summary class="cursor-pointer hover:text-red-700 dark:hover:text-red-300">Show diagram code</summary>
-                        <pre class="mt-2 bg-gray-100 dark:bg-gray-800 p-2 rounded overflow-auto text-xs">${block.code}</pre>
+                        <pre class="mt-2 bg-gray-100 dark:bg-gray-800 p-2 rounded overflow-auto text-xs">${
+                          block.code
+                        }</pre>
                       </details>
                       <details class="text-xs mt-2">
                         <summary class="cursor-pointer hover:text-red-700 dark:hover:text-red-300">Show full error</summary>
-                        <pre class="mt-2 bg-gray-100 dark:bg-gray-800 p-2 rounded overflow-auto text-xs">${error instanceof Error ? error.message : 'Unknown error'}</pre>
+                        <pre class="mt-2 bg-gray-100 dark:bg-gray-800 p-2 rounded overflow-auto text-xs">${
+                          error instanceof Error
+                            ? error.message
+                            : "Unknown error"
+                        }</pre>
                       </details>
                     </div>
                   </div>
