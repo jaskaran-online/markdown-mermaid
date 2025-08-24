@@ -245,6 +245,7 @@ export function LargePreview({ content, className }: LargePreviewProps) {
 
                 // Add the SVG
                 const svgContainer = document.createElement("div");
+                svgContainer.className = "svg-container";
                 svgContainer.innerHTML = svg;
                 svgContainer.style.position = "relative";
                 svgContainer.style.overflow = "auto";
@@ -253,12 +254,14 @@ export function LargePreview({ content, className }: LargePreviewProps) {
 
                 // Create zoom controls container
                 const zoomControls = document.createElement("div");
-                zoomControls.className = "absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-background/80 backdrop-blur-sm border border-border rounded-md p-1 flex gap-1";
+                zoomControls.className =
+                  "absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-background/80 backdrop-blur-sm border border-border rounded-md p-1 flex gap-1";
                 zoomControls.style.zIndex = "10";
 
                 // Zoom in button
                 const zoomInButton = document.createElement("button");
-                zoomInButton.className = "p-1 hover:bg-muted rounded transition-colors";
+                zoomInButton.className =
+                  "p-1 hover:bg-muted rounded transition-colors";
                 zoomInButton.innerHTML = `
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="11" cy="11" r="8"/>
@@ -271,7 +274,8 @@ export function LargePreview({ content, className }: LargePreviewProps) {
 
                 // Zoom out button
                 const zoomOutButton = document.createElement("button");
-                zoomOutButton.className = "p-1 hover:bg-muted rounded transition-colors";
+                zoomOutButton.className =
+                  "p-1 hover:bg-muted rounded transition-colors";
                 zoomOutButton.innerHTML = `
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="11" cy="11" r="8"/>
@@ -283,7 +287,8 @@ export function LargePreview({ content, className }: LargePreviewProps) {
 
                 // Reset zoom button
                 const resetZoomButton = document.createElement("button");
-                resetZoomButton.className = "p-1 hover:bg-muted rounded transition-colors";
+                resetZoomButton.className =
+                  "p-1 hover:bg-muted rounded transition-colors";
                 resetZoomButton.innerHTML = `
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
@@ -300,8 +305,8 @@ export function LargePreview({ content, className }: LargePreviewProps) {
 
                 const updateZoom = (newZoom: number) => {
                   const clampedZoom = Math.max(0.5, Math.min(3, newZoom));
-                  setZoomLevels(prev => ({ ...prev, [zoomId]: clampedZoom }));
-                  
+                  setZoomLevels((prev) => ({ ...prev, [zoomId]: clampedZoom }));
+
                   // Apply zoom transform to SVG container
                   svgContainer.style.transform = `scale(${clampedZoom})`;
                   svgContainer.style.transformOrigin = "top left";
@@ -395,7 +400,9 @@ export function LargePreview({ content, className }: LargePreviewProps) {
       {/* Mermaid Download Modal */}
       <MermaidDownloadModal
         isOpen={downloadModalState.isOpen}
-        onClose={() => setDownloadModalState({ ...downloadModalState, isOpen: false })}
+        onClose={() =>
+          setDownloadModalState({ ...downloadModalState, isOpen: false })
+        }
         mermaidCode={downloadModalState.mermaidCode}
         diagramTitle={downloadModalState.diagramTitle}
       />

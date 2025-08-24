@@ -241,9 +241,7 @@ export function MarkdownPreview({
           );
 
           // Skip if already rendered and content hasn't changed
-          if (placeholder && placeholder.querySelector(".mermaid-container")) {
-            continue;
-          }
+          if (!placeholder) continue;
 
           if (placeholder) {
             try {
@@ -269,10 +267,6 @@ export function MarkdownPreview({
                 .replace(/<span[^>]*>/g, "")
                 .replace(/<\/span>/g, "");
 
-              console.log("Rendering mermaid diagram:", diagramId);
-              console.log("Original mermaid code:", block.code);
-              console.log("Processed mermaid code:", processedCode);
-
               const { svg } = await mermaid.render(diagramId, processedCode);
 
               // Create container for diagram and download button
@@ -285,6 +279,7 @@ export function MarkdownPreview({
 
               // Add the SVG
               const svgContainer = document.createElement("div");
+              svgContainer.className = "svg-container";
               svgContainer.innerHTML = svg;
               svgContainer.style.position = "relative";
               svgContainer.style.overflow = "auto";
