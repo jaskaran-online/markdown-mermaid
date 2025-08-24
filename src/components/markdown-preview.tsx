@@ -87,7 +87,7 @@ export function MarkdownPreview({
           // Validate mermaid code before adding
           if (cleanCode && !cleanCode.includes("```")) {
             // Additional validation for complex mermaid diagrams
-            const hasValidSyntax = 
+            const hasValidSyntax =
               cleanCode.includes("flowchart") ||
               cleanCode.includes("graph") ||
               cleanCode.includes("sequenceDiagram") ||
@@ -102,9 +102,13 @@ export function MarkdownPreview({
               cleanCode.includes("mindmap");
 
             // Check for HTML artifacts that might cause parsing issues
-            const hasHtmlArtifacts = cleanCode.includes('<div') || cleanCode.includes('</div>') || 
-                                   cleanCode.includes('<span') || cleanCode.includes('</span>') ||
-                                   cleanCode.includes('class=') || cleanCode.includes('data-block-id=');
+            const hasHtmlArtifacts =
+              cleanCode.includes("<div") ||
+              cleanCode.includes("</div>") ||
+              cleanCode.includes("<span") ||
+              cleanCode.includes("</span>") ||
+              cleanCode.includes("class=") ||
+              cleanCode.includes("data-block-id=");
 
             if (hasValidSyntax && !hasHtmlArtifacts) {
               codeBlocks.push({
@@ -208,75 +212,87 @@ export function MarkdownPreview({
   // Render Mermaid diagrams after content is updated
   useEffect(() => {
     if (actualRef.current && processedContent.codeBlocks.length > 0) {
-      // Clear any existing mermaid diagrams first
-      const existingMermaidElements =
-        actualRef.current.querySelectorAll(".mermaid");
-      existingMermaidElements.forEach((el) => el.remove());
+      // Add a small delay to ensure theme change is applied
+      const renderDiagrams = async () => {
+        // Clear any existing mermaid diagrams first
+        const existingMermaidElements =
+          actualRef.current?.querySelectorAll(".mermaid");
+        existingMermaidElements?.forEach((el) => el.remove());
 
-      processedContent.codeBlocks.forEach(async (block) => {
-        if (block.isMermaid) {
-          const placeholder = actualRef.current?.querySelector(
-            `[data-block-id="${block.id}"]`
-          );
-          if (placeholder) {
-            try {
-              // Clear the placeholder first
-              placeholder.innerHTML = '';
-              
-              // Create a unique ID for this diagram
-              const diagramId = `mermaid-${block.id}-${Date.now()}`;
-              
-              // Preprocess the mermaid code to handle HTML tags better
-              let processedCode = block.code;
-              
-              // Ensure proper line endings
-              processedCode = processedCode.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-              
-              // Remove any potential HTML artifacts that might have been introduced
-              processedCode = processedCode.replace(/<div[^>]*>/g, '').replace(/<\/div>/g, '');
-              processedCode = processedCode.replace(/<span[^>]*>/g, '').replace(/<\/span>/g, '');
-              
-              console.log('Rendering mermaid diagram:', diagramId);
-              console.log('Original mermaid code:', block.code);
-              console.log('Processed mermaid code:', processedCode);
-              
-              const { svg } = await mermaid.render(diagramId, processedCode);
-              placeholder.innerHTML = svg;
-            } catch (error) {
-              console.error("Error rendering mermaid diagram:", error);
-              placeholder.innerHTML = `
-                <div class="text-red-500 p-3 border border-red-300 rounded bg-red-50 dark:bg-red-900/20 mb-4">
-                  <div class="flex items-start gap-2">
-                    <svg class="w-5 h-5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                    </svg>
-                    <div class="flex-1">
-                      <strong class="block mb-1">Mermaid Diagram Error</strong>
-                      <p class="text-sm mb-2">Could not render diagram. Please check the syntax.</p>
-                      <details class="text-xs">
-                        <summary class="cursor-pointer hover:text-red-700 dark:hover:text-red-300">Show diagram code</summary>
-                        <pre class="mt-2 bg-gray-100 dark:bg-gray-800 p-2 rounded overflow-auto text-xs">${
-                          block.code
-                        }</pre>
-                      </details>
-                      <details class="text-xs mt-2">
-                        <summary class="cursor-pointer hover:text-red-700 dark:hover:text-red-300">Show full error</summary>
-                        <pre class="mt-2 bg-gray-100 dark:bg-gray-800 p-2 rounded overflow-auto text-xs">${
-                          error instanceof Error
-                            ? error.message
-                            : "Unknown error"
-                        }</pre>
-                      </details>
+        for (const block of processedContent.codeBlocks) {
+          if (block.isMermaid) {
+            const placeholder = actualRef.current?.querySelector(
+              `[data-block-id="${block.id}"]`
+            );
+            if (placeholder) {
+              try {
+                // Clear the placeholder first
+                placeholder.innerHTML = "";
+
+                // Create a unique ID for this diagram
+                const diagramId = `mermaid-${block.id}-${Date.now()}`;
+
+                // Preprocess the mermaid code to handle HTML tags better
+                let processedCode = block.code;
+
+                // Ensure proper line endings
+                processedCode = processedCode
+                  .replace(/\r\n/g, "\n")
+                  .replace(/\r/g, "\n");
+
+                // Remove any potential HTML artifacts that might have been introduced
+                processedCode = processedCode
+                  .replace(/<div[^>]*>/g, "")
+                  .replace(/<\/div>/g, "");
+                processedCode = processedCode
+                  .replace(/<span[^>]*>/g, "")
+                  .replace(/<\/span>/g, "");
+
+                console.log("Rendering mermaid diagram:", diagramId);
+                console.log("Original mermaid code:", block.code);
+                console.log("Processed mermaid code:", processedCode);
+
+                const { svg } = await mermaid.render(diagramId, processedCode);
+                placeholder.innerHTML = svg;
+              } catch (error) {
+                console.error("Error rendering mermaid diagram:", error);
+                placeholder.innerHTML = `
+                  <div class="text-red-500 p-3 border border-red-300 rounded bg-red-50 dark:bg-red-900/20 mb-4">
+                    <div class="flex items-start gap-2">
+                      <svg class="w-5 h-5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                      </svg>
+                      <div class="flex-1">
+                        <strong class="block mb-1">Mermaid Diagram Error</strong>
+                        <p class="text-sm mb-2">Could not render diagram. Please check the syntax.</p>
+                        <details class="text-xs">
+                          <summary class="cursor-pointer hover:text-red-700 dark:hover:text-red-300">Show diagram code</summary>
+                          <pre class="mt-2 bg-gray-100 dark:bg-gray-800 p-2 rounded overflow-auto text-xs">${
+                            block.code
+                          }</pre>
+                        </details>
+                        <details class="text-xs mt-2">
+                          <summary class="cursor-pointer hover:text-red-700 dark:hover:text-red-300">Show full error</summary>
+                          <pre class="mt-2 bg-gray-100 dark:bg-gray-800 p-2 rounded overflow-auto text-xs">${
+                            error instanceof Error
+                              ? error.message
+                              : "Unknown error"
+                          }</pre>
+                        </details>
+                      </div>
                     </div>
                   </div>
-                </div>
-              `;
+                `;
+              }
             }
           }
         }
-      });
+      };
+
+      // Call the async function
+      renderDiagrams();
     }
-  }, [processedContent, actualRef]);
+  }, [processedContent, actualRef, theme]);
 
   return (
     <div className={`flex flex-col h-full ${className}`}>
