@@ -19,32 +19,40 @@ export function MarkdownEditor({ value, onChange, className }: MarkdownEditorPro
     monaco: Monaco
   ) => {
     editorRef.current = editor
+    console.log('Monaco Editor mounted successfully')
 
     // Configure Monaco for Markdown
-    monaco.languages.setMonarchTokensProvider('markdown', {
-      tokenizer: {
-        root: [
-          // Headers
-          [/^#{1,6}\s/, 'keyword'],
-          // Bold
-          [/\*\*[^*]+\*\*/, 'string'],
-          // Italic
-          [/\*[^*]+\*/, 'string'],
-          // Code blocks
-          [/```[\s\S]*?```/, 'comment'],
-          // Inline code
-          [/`[^`]+`/, 'comment'],
-          // Links
-          [/\[.*?\]\(.*?\)/, 'string'],
-          // Lists
-          [/^\s*[-*+]\s/, 'keyword'],
-          [/^\s*\d+\.\s/, 'keyword'],
-        ]
-      }
-    })
+    try {
+      monaco.languages.setMonarchTokensProvider('markdown', {
+        tokenizer: {
+          root: [
+            // Headers
+            [/^#{1,6}\s/, 'keyword'],
+            // Bold
+            [/\*\*[^*]+\*\*/, 'string'],
+            // Italic
+            [/\*[^*]+\*/, 'string'],
+            // Code blocks
+            [/```[\s\S]*?```/, 'comment'],
+            // Inline code
+            [/`[^`]+`/, 'comment'],
+            // Links
+            [/\[.*?\]\(.*?\)/, 'string'],
+            // Lists
+            [/^\s*[-*+]\s/, 'keyword'],
+            [/^\s*\d+\.\s/, 'keyword'],
+          ]
+        }
+      })
+      console.log('Markdown syntax highlighting configured')
+    } catch (error) {
+      console.error('Error configuring Markdown syntax:', error)
+    }
 
-    // Set theme
-    monaco.editor.setTheme('vs-dark')
+    // Set theme based on current theme
+    const isDark = document.documentElement.classList.contains('dark')
+    monaco.editor.setTheme(isDark ? 'vs-dark' : 'vs')
+    console.log('Editor theme set to:', isDark ? 'vs-dark' : 'vs')
   }
 
   const handleEditorChange = (value: string | undefined) => {

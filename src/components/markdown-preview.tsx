@@ -33,28 +33,14 @@ export function MarkdownPreview({ content, className, previewRef }: MarkdownPrev
 
   const processedContent = useMemo(() => {
     try {
+      console.log('Processing content:', content)
       // Extract code blocks and mermaid blocks
       const codeBlocks: { id: string; language: string; code: string; isMermaid: boolean }[] = []
       let blockCounter = 0
 
-      // First, handle Mermaid blocks
+      // First, handle regular code blocks (excluding mermaid)
       let processedContent = content.replace(
-        /```mermaid\s*\n([\s\S]*?)\n```/g,
-        (_, diagramCode) => {
-          const blockId = `block-${blockCounter++}`
-          codeBlocks.push({
-            id: blockId,
-            language: 'mermaid',
-            code: diagramCode.trim(),
-            isMermaid: true
-          })
-          return `<div class="code-block-placeholder" data-block-id="${blockId}"></div>`
-        }
-      )
-
-      // Then handle regular code blocks
-      processedContent = processedContent.replace(
-        /```(\w+)?\s*\n([\s\S]*?)\n```/g,
+        /```(?!mermaid)(\w+)?\s*\n([\s\S]*?)\n```/g,
         (_, language, code) => {
           const blockId = `block-${blockCounter++}`
           codeBlocks.push({
@@ -66,6 +52,24 @@ export function MarkdownPreview({ content, className, previewRef }: MarkdownPrev
           return `<div class="code-block-placeholder" data-block-id="${blockId}"></div>`
         }
       )
+
+      // Then handle Mermaid blocks specifically
+      processedContent = processedContent.replace(
+        /```mermaid\s*\n([\s\S]*?)\n```/g,
+        (_, diagramCode) => {
+          const blockId = `block-${blockCounter++}`
+          console.log('Found Mermaid block:', diagramCode.trim())
+          codeBlocks.push({
+            id: blockId,
+            language: 'mermaid',
+            code: diagramCode.trim(),
+            isMermaid: true
+          })
+          return `<div class="code-block-placeholder" data-block-id="${blockId}"></div>`
+        }
+      )
+
+      console.log('Code blocks found:', codeBlocks)
 
       // Process markdown to HTML
       const processed = remark()
@@ -114,25 +118,26 @@ export function MarkdownPreview({ content, className, previewRef }: MarkdownPrev
         }
       })
     }
-  }, [processedContent, theme])
+  }, [processedContent, theme, actualRef])
 
   // Render Mermaid diagrams after content is updated
   useEffect(() => {
-    if (actualRef.current) {
-      const mermaidElements = actualRef.current.querySelectorAll('.mermaid')
-      mermaidElements.forEach(async (element) => {
-        const diagramId = element.getAttribute('data-mermaid-id') || `mermaid-${Math.random().toString(36).substring(2, 11)}`
-        const diagramCode = element.textContent || ''
-
-        try {
-          const { svg } = await mermaid.render(diagramId, diagramCode)
-          element.innerHTML = svg
-        } catch (error) {
-          console.error('Error rendering mermaid diagram:', error)
-          element.innerHTML = `<div class="text-red-500 p-2 border border-red-300 rounded bg-red-50 dark:bg-red-900/20">
-            <strong>Mermaid Error:</strong> ${error instanceof Error ? error.message : 'Unknown error'}
-            <pre class="mt-2 text-xs bg-gray-100 dark:bg-gray-800 p-2 rounded overflow-auto">${diagramCode}</pre>
-          </div>`
+    if (actualRef.current && processedContent.codeBlocks.length > 0) {
+      processedContent.codeBlocks.forEach(async (block) => {
+        if (block.isMermaid) {
+          const placeholder = actualRef.current?.querySelector(`[data-block-id="${block.id}"]`)
+          if (placeholder) {
+            try {
+              const { svg } = await mermaid.render(block.id, block.code)
+              placeholder.innerHTML = svg
+            } catch (error) {
+              console.error('Error rendering mermaid diagram:', error)
+              placeholder.innerHTML = `<div class="text-red-500 p-2 border border-red-300 rounded bg-red-50 dark:bg-red-900/20">
+                <strong>Mermaid Error:</strong> ${error instanceof Error ? error.message : 'Unknown error'}
+                <pre class="mt-2 text-xs bg-gray-100 dark:bg-gray-800 p-2 rounded overflow-auto">${block.code}</pre>
+              </div>`
+            }
+          }
         }
       })
     }
